@@ -1,10 +1,17 @@
 from xml.etree import ElementTree
 
 
-class WebsearchBenchmarkResult:
+class WebSearchResult(object):
+    """
+    Helper to reade web search output logs.
+    """
     xml_body = None
 
     def __init__(self, path, xml_only=False):
+        """
+        :param path: abs file name
+        :param xml_only: bool, set True if the file is a pure xml file
+        """
         with open(path, "r") as fd:
             content = fd.readlines()
 

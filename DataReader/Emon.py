@@ -1,8 +1,9 @@
-
 import pandas as pd
 import os
 
 __all__ = ["EMONSummaryData", "EMONDetailData"]
+
+# here is the version number from EDP
 __ver__ = "3.6"
 
 
@@ -11,6 +12,11 @@ class EMONReaderError(BaseException):
 
 
 class EMONCSVReader(object):
+    """
+    Base Emon/edp csv data reader
+    """
+
+    # define the view type
     SYSTEM = "system"
     CORE = "core"
     SOCKET = "socket"
@@ -21,6 +27,9 @@ class EMONCSVReader(object):
     _filename_format = "%s.csv"
 
     def __init__(self, path):
+        """
+        :param path: folder which contains emon/edp csv files
+        """
         self.path = path
 
     def get_file_content(self, view):

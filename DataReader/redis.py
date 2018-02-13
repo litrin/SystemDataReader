@@ -1,12 +1,28 @@
 class RedisBenchmarkData(object):
+    """
+    Read redis-benchmark results
+    """
     content = []
     trans_data = []
 
-    def __init__(self, filename):
+    def __init__(self, filename, trans=None):
+        """
+        :param filename: redis-benchmark output file
+        """
         with open(filename, "r") as fd:
             self.content = fd.readlines()
+        if trans is not None:
+            self.set_transaction(trans)
 
     def set_transaction(self, trans):
+        """
+        Set redis transaction type
+
+        :param trans: trans code
+        :return: None
+        """
+
+        # todo: here needs to add logic to validate the trans code.
         tag = "====== %s" % trans.upper()
         found_tag = False
         self.trans_data = []
@@ -47,4 +63,3 @@ class RedisBenchmarkData(object):
     def total_time(self):
         raw = self.trans_data[0].split()[-2]
         return float(raw)
-

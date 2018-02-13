@@ -2,13 +2,6 @@ import os
 import pandas as pd
 
 
-def list_all_datasets(path):
-    for f in os.listdir(path):
-        if f.find(".") != -1:
-            continue
-        yield os.path.join(path, f)
-
-
 class CSVCombineHelper(object):
     builder = None
     file_list = []

@@ -4,10 +4,17 @@ import re
 
 __all__ = ["SPECjbb2015Score", "SPECjbb2015TotalPurchaseData"]
 
-class SPECjbb2015Score:
+
+class SPECjbb2015Score(object):
+    """
+    Read response times from specjbb2015 result path
+    """
     filename = None
 
     def __init__(self, path):
+        """
+        :param path: folder for SPECjbb2015 results
+        """
         self.filename = self.get_rt_overall_file(path)
 
     def get_rt_overall_file(self, path):
@@ -16,8 +23,10 @@ class SPECjbb2015Score:
                 return os.path.join(path, folder)
 
             elif folder.find("specjbb2015-") != -1 or folder.find(
-                    "report-") != -1 or folder == "data" or folder == "rt-curve":
+                    "report-") != -1 \
+                    or folder == "data" or folder == "rt-curve":
 
+                # recursion for file seeking
                 result_path = os.path.join(path, folder)
                 return self.get_rt_overall_file(result_path)
 
@@ -42,7 +51,14 @@ class SPECjbb2015Score:
 
 
 class SPECjbb2015TotalPurchaseData:
+    """
+    Read response times from specjbb2015 output file
+    """
+
     def __init__(self, filename):
+        """
+        :param filename: output file name
+        """
         self.filename = filename
 
     def read_output_content(self):
