@@ -1,7 +1,8 @@
+from base import RawDataFileReader
 from xml.etree import ElementTree
 
 
-class WebSearchResult(object):
+class WebSearchResult(RawDataFileReader):
     """
     Helper to reade web search output logs.
     """
@@ -12,8 +13,8 @@ class WebSearchResult(object):
         :param path: abs file name
         :param xml_only: bool, set True if the file is a pure xml file
         """
-        with open(path, "r") as fd:
-            content = fd.readlines()
+        self.filename = path
+        content = self.reader()
 
         if xml_only is False:
             content = content[31:]

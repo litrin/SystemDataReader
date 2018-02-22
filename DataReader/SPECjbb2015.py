@@ -2,6 +2,8 @@ import os
 import pandas as pd
 import re
 
+from base import RawDataFileReader
+
 __all__ = ["SPECjbb2015Score", "SPECjbb2015TotalPurchaseData"]
 
 
@@ -50,7 +52,7 @@ class SPECjbb2015Score(object):
         return len(self.csv_content)
 
 
-class SPECjbb2015TotalPurchaseData:
+class SPECjbb2015TotalPurchaseData(RawDataFileReader):
     """
     Read response times from specjbb2015 output file
     """
@@ -62,26 +64,21 @@ class SPECjbb2015TotalPurchaseData:
         self.filename = filename
 
     def read_output_content(self):
-        reg = re.compile(r"^\s+?TotalPurchase,")
+        result = []
+        for row in self.grep_iterator(r"^\s+?TotalPurchase,"):
+            element = row.split(",")
+            result.append(element[1:-1])
 
-        with open(self.filename, "r") as fd:
-            while True:
-                row = fd.readline()
-                if len(row) is 0:
-                    break
-                if not reg.match(row):
-                    continue
-                else:
-                    yield row.split(",")
+        return result
 
     @property
     def all(self):
-        data = pd.DataFrame([i[1:-1] for i in self.read_output_content()],
-                            dtype=float, columns=["Success", "Partial",
-                                                  "Failed", "SkipFail",
-                                                  "Probes", "Samples",
-                                                  "min", "p50", "p90",
-                                                  "p95", "p99", "max"])
+        data = pd.DataFrame(self.read_output_content(), dtype=float,
+                            columns=["Success", "Partial",
+                                     "Failed", "SkipFail",
+                                     "Probes", "Samples",
+                                     "min", "p50", "p90",
+                                     "p95", "p99", "max"])
         return data
 
     @property

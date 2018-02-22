@@ -1,4 +1,7 @@
-class RedisBenchmarkData(object):
+from base import RawDataFileReader
+
+
+class RedisBenchmarkData(RawDataFileReader):
     """
     Read redis-benchmark results
     """
@@ -9,8 +12,9 @@ class RedisBenchmarkData(object):
         """
         :param filename: redis-benchmark output file
         """
-        with open(filename, "r") as fd:
-            self.content = fd.readlines()
+        self.filename = filename
+        self.content = self.reader()
+
         if trans is not None:
             self.set_transaction(trans)
 

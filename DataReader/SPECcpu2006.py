@@ -1,7 +1,7 @@
-import re
+from base import RawDataFileReader
 
 
-class SPECCPU2006Score(object):
+class SPECCPU2006Score(RawDataFileReader):
     filename = None
     default_component = "mcf"
 
@@ -20,16 +20,11 @@ class SPECCPU2006Score(object):
 
         regex = r"^\d{3}\.%s+(\s+\d+){3}" % component
 
-        with open(self.filename, "r") as fd:
-            # score_content = filter(lambda a: a.find(component) != -1,
-            #                        fd.readlines())[1]
-            score_content = filter(lambda a: re.match(regex, a),
-                                   fd.readlines()).pop()
-
+        score_content = self.egrep(regex).pop()
         self.score_row = filter(lambda a: len(a) > 0, score_content.split())
 
     @property
-    def full_name(self):
+    def component_name(self):
         return self.score_row[0]
 
     @property
