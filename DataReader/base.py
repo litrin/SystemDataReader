@@ -7,14 +7,19 @@ class RawDataFileReader(object):
     Base class to read file
     """
     filename = sys.stdin
+    _cache = None
 
-    def reader(self):
+    def reader(self, refresh=False):
         """
         file reader
+        :param refresh: mandatory refresh the cached file
         :return: list
         """
-        with open(self.filename, "r") as fd:
-            return fd.readlines()
+        if refresh or self._cache is None:
+            with open(self.filename, "r") as fd:
+                self._cache = fd.readlines()
+
+        return self._cache
 
     def grep(self, key_word):
         """
