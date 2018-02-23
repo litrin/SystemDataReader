@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from abc import ABCMeta
 
 __all__ = ["EMONSummaryData", "EMONDetailData"]
 
@@ -15,7 +16,7 @@ class EMONCSVReader(object):
     """
     Base Emon/edp csv data reader
     """
-
+    __metaclass__ = ABCMeta
     # define the view type
     SYSTEM = "system"
     CORE = "core"
@@ -45,7 +46,8 @@ class EMONCSVReader(object):
 
         return self.read_csv(abs_filename)
 
-    def read_csv(self, abs_filename):
+    @staticmethod
+    def read_csv(abs_filename):
         data = pd.read_csv(abs_filename, index_col=0, low_memory=False,
                            na_filter=False)
 

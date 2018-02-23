@@ -1,4 +1,5 @@
 import sys
+import os
 import re
 
 
@@ -6,24 +7,31 @@ class RawDataFileReader(object):
     """
     Base class to read file
     """
-    filename = sys.stdin
-    _cache = None
 
-    def reader(self, refresh=False):
+    filename = sys.stdin
+
+    # build up a cache object to accelerate the file access
+    _raw_data_cache = None
+
+    def reader(self, cache_refresh=False):
         """
-        file reader
-        :param refresh: mandatory refresh the cached file
+        main method to read raw data files.
+
+        :param cache_refresh: mandatory refresh the cached file
         :return: list
         """
-        if refresh or self._cache is None:
+        if cache_refresh or self._raw_data_cache is None:
+            if not os.path.exists(self.filename):
+                raise NameError(
+                    "Raw data file %s is not exist" % self.filename)
             with open(self.filename, "r") as fd:
-                self._cache = fd.readlines()
+                self._raw_data_cache = fd.readlines()
 
-        return self._cache
+        return self._raw_data_cache
 
     def grep(self, key_word):
         """
-        Linux grep command
+        Same function from Linux grep command
         :param key_word: str
         :return: list
         """

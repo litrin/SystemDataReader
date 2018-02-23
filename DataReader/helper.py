@@ -21,7 +21,11 @@ class CSVCombineHelper(object):
     def select_data(self, data_entry):
         return data_entry
 
-    def to_excel(self, filename="data.xls"):
+    def dump_excel(self, filename="data.xls"):
+        df = self.get_dataframe()
+        df.to_excel(filename)
+
+    def get_dataframe(self):
         result = {}
         for path in self.file_list:
             reader = self.build_data_object(path)
@@ -29,9 +33,8 @@ class CSVCombineHelper(object):
 
             label = os.path.split(path)[-1]
             result[label] = data
-
         result = pd.DataFrame(result)
-        result.to_excel(filename)
+        return result
 
 
 class CPUCoreList(object):
@@ -73,12 +76,11 @@ class CPUCoreList(object):
                 continue
             if element.find("-") is not -1:
                 element = element.split("-")
-                max = int(element[1])
-                min = int(element[0])
-                if max < min:
-                    max, min = min, max
+                core_num_end = int(element[1])
+                if core_num_end < min:
+                    core_num_end, min = min, core_num_end
 
-                for core in range(min, max + 1):
+                for core in range(min, core_num_end + 1):
                     cpus.add(core)
             else:
                 cpus.add(int(element))
@@ -125,4 +127,3 @@ class CPUCoreList(object):
     def __iter__(self):
         for core in self.cpu_list:
             yield core
-
