@@ -62,3 +62,11 @@ class RawDataFileReader(object):
 
                 if regex.match(row):
                     yield row
+
+    @property
+    def create_time(self):
+        return os.path.getctime(self.filename)
+
+    @property
+    def file_size(self):
+        return os.path.getsize(self.filename)
