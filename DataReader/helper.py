@@ -4,37 +4,82 @@ import pandas as pd
 
 
 class CSVCombineHelper(object):
+    """
+    A framework to list all child paths, combine data to a data frame.
+    """
     builder = None
     file_list = []
     data_set = None
 
-    def __init__(self, path, builder=None):
+    def __init__(self, main_path, builder=None):
+        """
+        object initialize
+
+        :param main_path: str the main data path
+        :param builder: run able data frame builder
+        """
         self.builder = builder
-        for f in os.listdir(path):
-            if f.find(".") != -1:
+        for f in os.listdir(main_path):
+            abs_name = os.path.join(main_path, f)
+            if os.path.isfile(abs_name):
                 continue
-            self.file_list.append(os.path.join(path, f))
+                
+            self.file_list.append(abs_name)
 
     def build_data_object(self, path):
+        """
+        help to create a data frame object, may override by child objects.
+
+        :param path: full filename/path
+        :return: object data frame object
+        """
         return self.builder(path)
 
-    def select_data(self, data_entry):
+    def date_prepare(self, data_entry):
+        """
+        interface for override.
+        Allow developers to do some data operation here.
+
+        :param data_entry: data frame object
+        :return: data frame object
+        """
         return data_entry
 
     def dump_excel(self, filename="data.xls"):
+        """
+        Save data file as excel.
+
+        :param filename: str filename
+        :return: None
+        """
         df = self.get_dataframe()
         df.to_excel(filename)
 
     def get_dataframe(self):
+        """
+        method for get data
+
+        :return: data frame object
+        """
         result = {}
         for path in self.file_list:
             reader = self.build_data_object(path)
-            data = self.select_data(reader)
+            data = self.date_prepare(reader)
 
-            label = os.path.split(path)[-1]
+            label = self.get_column_name(path)
             result[label] = data
+
         result = pd.DataFrame(result)
         return result
+
+    def get_column_name(self, full_path):
+        """
+        covert column name by path
+
+        :param full_path: str abs filename
+        :return: str column label
+        """
+        return os.path.split(full_path)[-1]
 
 
 class CPUCoreList(object):
