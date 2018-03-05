@@ -23,7 +23,7 @@ class CSVCombineHelper(object):
             abs_name = os.path.join(main_path, f)
             if os.path.isfile(abs_name):
                 continue
-                
+
             self.file_list.append(abs_name)
 
     def build_data_object(self, path):
@@ -63,10 +63,11 @@ class CSVCombineHelper(object):
         """
         result = {}
         for path in self.file_list:
+            label = self.get_column_name(path)
+
             reader = self.build_data_object(path)
             data = self.date_prepare(reader)
 
-            label = self.get_column_name(path)
             result[label] = data
 
         result = pd.DataFrame(result)
@@ -172,3 +173,21 @@ class CPUCoreList(object):
     def __iter__(self):
         for core in self.cpu_list:
             yield core
+
+
+class ExcelSheet:
+    writer = None
+    sheet_number = 0
+
+    def __init__(self, filename):
+        self.writer = pd.ExcelWriter(filename)
+
+    def __del__(self):
+        self.writer.close()
+
+    def add_sheet(self, df, sheet_label=None):
+        self.sheet_number += 1
+        if sheet_label is None:
+            sheet_label = "sheet%s" % self.sheet_number
+
+        df.to_excel(self.writer, sheet_name=sheet_label)
