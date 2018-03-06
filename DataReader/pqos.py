@@ -12,6 +12,7 @@ class PQoSReader(RawDataFileReader):
     @property
     def data(self):
         data = []
+
         for lines, entry in enumerate(self.reader()):
             if re.match(r"^\s?\d+", entry) is None:
                 continue
@@ -25,7 +26,7 @@ class PQoSReader(RawDataFileReader):
                     entry[key] = float(entry[key])
                 data.append(entry)
             except:
-                continue
+                print("%s skip line %d" % (self.filename, lines))
 
         return pd.DataFrame(data)
 

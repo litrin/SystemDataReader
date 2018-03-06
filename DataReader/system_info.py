@@ -65,5 +65,11 @@ class CommandlscpuInfo(RawDataFileReader):
         llc_capacity = int(self.llc[:-1])
         return llc_capacity / total_bitways
 
+    @property
+    def family_stepping(self):
+        # stepping 4 is skx, 5 is clx
+        return (int(self.get_info("CPU family")),
+                int(self.get_info("Stepping")))
+
     def is_support(self, feature):
         return feature.lower() in self.flags
