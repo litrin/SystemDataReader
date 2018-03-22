@@ -11,6 +11,8 @@ __ver__ = "3.6"
 class EMONReaderError(BaseException):
     pass
 
+class EMONDataError(BaseException):
+    pass
 
 class EMONCSVReader(object):
     """
@@ -44,7 +46,7 @@ class EMONCSVReader(object):
             raise EMONReaderError("file not exist: %s" % abs_filename)
 
         if not os.path.exists(os.path.join(self.path, "emon_data.zip")):
-            raise EMONReaderError(
+            raise EMONDataError(
                 "Process does not finish at %s" % abs_filename)
 
         df = self.read_csv(abs_filename)

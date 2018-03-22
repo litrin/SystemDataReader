@@ -35,7 +35,7 @@ class CSVCombineHelper(object):
         """
         return self.builder(path)
 
-    def date_prepare(self, data_entry):
+    def data_prepare(self, data_entry):
         """
         interface for override.
         Allow developers to do some data operation here.
@@ -66,7 +66,7 @@ class CSVCombineHelper(object):
             label = self.get_column_name(path)
 
             reader = self.build_data_object(path)
-            data = self.date_prepare(reader)
+            data = self.data_prepare(reader)
 
             result[label] = data
 
