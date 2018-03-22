@@ -1,15 +1,23 @@
-from base import RawDataFileReader
+from DataReader.base import RawDataFileReader
 
 
-class CommandlscpuInfo(RawDataFileReader):
-    __version__ = 2.23
 
+class CLIOptionReaderBase(RawDataFileReader):
     def __init__(self, filename=None):
         self.filename = filename
 
     def get_info(self, key):
         result = self.grep(key).pop(0).split(":")
         return result[1].strip()
+
+
+class CLIOptionReader(CLIOptionReaderBase):
+    def __getattr__(self, item):
+        return self.get_info(item)
+
+
+class CommandlscpuInfo(CLIOptionReaderBase):
+    __version__ = 2.23
 
     @property
     def core_number(self):
@@ -73,3 +81,5 @@ class CommandlscpuInfo(RawDataFileReader):
 
     def is_support(self, feature):
         return feature.lower() in self.flags
+
+
