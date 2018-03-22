@@ -6,6 +6,10 @@ from base import RawDataFileReader
 __all__ = ["SPECjbb2015Score", "SPECjbb2015TotalPurchaseData"]
 
 
+class SPECjbb2015ResultsErr(BaseException):
+    pass
+
+
 class SPECjbb2015Score(object):
     """
     Read response times from specjbb2015 result path
@@ -30,6 +34,9 @@ class SPECjbb2015Score(object):
                 # recursion for file seeking
                 result_path = os.path.join(path, folder)
                 return self.get_rt_overall_file(result_path)
+
+        raise SPECjbb2015ResultsErr(
+            "path %s hasn't contained SPECjbb2015 results" % path)
 
     @property
     def csv_content(self):
@@ -83,6 +90,10 @@ class SPECjbb2015TotalPurchaseData(RawDataFileReader):
     @property
     def p50(self):
         return self.all.p50
+
+    @property
+    def max(self):
+        return self.all.max
 
     def __len__(self):
         return len(self.all)
