@@ -5,14 +5,16 @@ from abc import ABCMeta
 __all__ = ["EMONSummaryData", "EMONDetailData"]
 
 # here is the version number from EDP
-__ver__ = "3.6"
+__ver__ = "3.7"
 
 
 class EMONReaderError(BaseException):
     pass
 
+
 class EMONDataError(BaseException):
     pass
+
 
 class EMONCSVReader(object):
     """
@@ -38,14 +40,15 @@ class EMONCSVReader(object):
         """
         self.path = path
 
-    def get_file_content(self, view):
+    def get_file_content(self, view, check_processing_state=False):
         filename = self._filename_format % view
 
         abs_filename = os.path.join(self.path, filename)
         if not os.path.exists(abs_filename):
             raise EMONReaderError("file not exist: %s" % abs_filename)
 
-        if not os.path.exists(os.path.join(self.path, "emon_data.zip")):
+        if check_processing_state and not os.path.exists(
+                os.path.join(self.path, "emon_data.zip")):
             raise EMONDataError(
                 "Process does not finish at %s" % abs_filename)
 

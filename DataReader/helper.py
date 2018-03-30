@@ -3,6 +3,10 @@ import re
 import pandas as pd
 
 
+class DataReaderError(BaseException):
+    pass
+
+
 class CSVCombineHelper(object):
     """
     A framework to list all child paths, combine data to a data frame.
@@ -64,11 +68,13 @@ class CSVCombineHelper(object):
         result = {}
         for path in self.file_list:
             label = self.get_column_name(path)
+            try:
+                reader = self.build_data_object(path)
+                data = self.data_prepare(reader)
+                result[label] = data
 
-            reader = self.build_data_object(path)
-            data = self.data_prepare(reader)
-
-            result[label] = data
+            except Exception as e:
+                raise DataReaderError(e.message)
 
         result = pd.DataFrame(result)
         return result
@@ -80,7 +86,7 @@ class CSVCombineHelper(object):
         :param full_path: str abs filename
         :return: str column label
         """
-        return os.path.split(full_path)[-1]
+        return full_path
 
 
 class CPUCoreList(object):
@@ -109,7 +115,7 @@ class CPUCoreList(object):
         # validate input string
         regex = r"^(\d+(,|-))+(\d+|),*$"
         if not re.match(regex, cpu_set):
-            raise EnvironmentError(
+            raise DataReaderError(
                 "string: '%s' is not a regular core list" % cpu_set)
         else:
             self.convert(cpu_set)
