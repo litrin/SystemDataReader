@@ -1,10 +1,7 @@
 import os
 import re
 import pandas as pd
-
-
-class DataReaderError(BaseException):
-    pass
+from base import DataReaderError
 
 
 class CSVCombineHelper(object):

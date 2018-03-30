@@ -70,3 +70,10 @@ class RawDataFileReader(object):
     @property
     def file_size(self):
         return os.path.getsize(self.filename)
+
+
+class DataReaderError(BaseException):
+    """
+    Base error handler
+    """
+    pass
