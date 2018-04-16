@@ -5,9 +5,11 @@ import re
 
 class PQoSReader(RawDataFileReader):
     headers = ['CORE', 'IPC', 'MISSES', 'LLC', 'MBL', 'MBR']
+    sample_range = None
 
-    def __init__(self, input):
+    def __init__(self, input, sample_range=None):
         self.filename = input
+        self.sample_range = sample_range
 
     @property
     def data(self):
@@ -29,7 +31,11 @@ class PQoSReader(RawDataFileReader):
                 skip += 1
                 print("%s skip" % self.filename)
 
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+        if self.sample_range is not None:
+            df = df[self.sample_range[0]:self.sample_range[1]]
+
+        return df
 
     @property
     def ipc(self):
@@ -43,3 +49,14 @@ class PQoSReader(RawDataFileReader):
     def memory_bandwidth_total(self):
         data = self.data.groupby(["CORE"]).mean().sum()
         return data.MBL + data.MBR
+
+    def compare_by_coresets(self, col_name):
+        data = self.data[col_name]
+
+        all_coresets = data.groupby("CORE").nunique()["CORE"].index
+        result = {
+            coreset: data[self.data["CORE"] == coreset].values
+            for coreset in all_coresets
+        }
+
+        return pd.DataFrame(result)
