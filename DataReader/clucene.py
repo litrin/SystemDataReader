@@ -1,4 +1,5 @@
 import os
+import re
 
 
 class BaseCluceneReader:
@@ -6,6 +7,8 @@ class BaseCluceneReader:
     latencies = []
 
     total_run_time = 0
+
+    distribution_list = [3E4, 5E4, 7E4, 1E5, 1.5E5, 2E5]
 
     def __init__(self):
         if self.total_run_time is not 0:
@@ -20,15 +23,22 @@ class BaseCluceneReader:
 
     @property
     def distribution(self):
-        distribution_list = [3E4, 5E4, 7E4, 1E5, 1.5E5, 2E5]
-        distribution = [0] * len(distribution_list)
+        distribution = [0] * len(self.distribution_list)
 
         for latency in self.latencies:
-            for offset, value in enumerate(distribution_list):
+            for offset, value in enumerate(self.distribution_list):
                 if latency < value:
                     distribution[offset] += 1
 
-        return zip(distribution_list, distribution)
+        return zip(self.distribution_list, distribution)
+
+    def threshold(self, value):
+        pos = 0.0
+        for latency in self.latencies:
+            if latency < value:
+                pos += 1
+
+        return pos / len(self)
 
 
 class CluceneSingleFileReader(BaseCluceneReader):
@@ -47,7 +57,9 @@ class CluceneSingleFileReader(BaseCluceneReader):
                 self.latencies.append(float(vec[-1]))
 
 
-class CluceneLogPathReader(CluceneSingleFileReader):
+class CluceneLogPathReader(BaseCluceneReader):
+    filename_reg = re.compile(r"^log_\d+\.log$")
+    log_entry_reg = re.compile(r"Search took")
 
     def __init__(self, path, duration=None):
         self.read_path(path)
@@ -56,5 +68,15 @@ class CluceneLogPathReader(CluceneSingleFileReader):
 
     def read_path(self, path):
         for filename in os.listdir(path):
-            if filename[:4] == "log_" and filename[-4:] == ".log":
-                self.read_log_file(filename)
+
+            # here assume all log files match "log_*.log"
+            if self.filename_reg.match(filename):
+
+                with open(filename) as fp:
+                    for line in fp:
+                        if not self.log_entry_reg.match(line):
+                            continue
+
+                        line = line.strip('\n')
+                        vec = line.split(' ')
+                        self.latencies.append(float(vec[-1]))
