@@ -1,16 +1,15 @@
-class CluceneLatency:
-    latencies = []
+import os
+
+
+class BaseCluceneReader:
     qps = 0
+    latencies = []
 
-    def __init__(self, filename, duration=None):
-        with open(filename) as fp:
-            for line in fp:
-                line = line.strip('\n')
-                vec = line.split(' ')
-                self.latencies.append(float(vec[-1]))
+    total_run_time = 0
 
-        if duration is not None:
-            self.qps = len(self.latencies) / float(duration)
+    def __init__(self):
+        if self.total_run_time is not 0:
+            self.qps = len(self.latencies) / float(self.total_run_time)
 
     def __len__(self):
         return len(self.latencies)
@@ -30,3 +29,32 @@ class CluceneLatency:
                     distribution[offset] += 1
 
         return zip(distribution_list, distribution)
+
+
+class CluceneSingleFileReader(BaseCluceneReader):
+
+    def __init__(self, filename, duration=None):
+        self.read_log_file(filename)
+
+        if duration is not None:
+            self.total_run_time = duration
+
+    def read_log_file(self, filename):
+        with open(filename) as fp:
+            for line in fp:
+                line = line.strip('\n')
+                vec = line.split(' ')
+                self.latencies.append(float(vec[-1]))
+
+
+class CluceneLogPathReader(CluceneSingleFileReader):
+
+    def __init__(self, path, duration=None):
+        self.read_path(path)
+        if duration is not None:
+            self.total_run_time = duration
+
+    def read_path(self, path):
+        for filename in os.listdir(path):
+            if filename[:4] == "log_" and filename[-4:] == ".log":
+                self.read_log_file(filename)
