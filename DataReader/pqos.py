@@ -22,11 +22,18 @@ class PQoSReader(RawDataFileReader):
                 entry = dict(zip(self.headers, entry.split()))
 
                 entry["IPC"] = float(entry["IPC"])
+                # sometime there haven't breaks between column IPC and MISSES
+                assert (entry["IPC"] < 4) # resonable IPC value
+
                 entry["MISSES"] = int(entry["MISSES"][:-1]) << 10
 
                 for key in ['LLC', 'MBL', 'MBR']:
                     entry[key] = float(entry[key])
                 data.append(entry)
+
+            except AssertionError:
+                print("spliting fail for %s, skip this record" % self.filename)
+
             except:
                 skip += 1
                 print("%s skip" % self.filename)
