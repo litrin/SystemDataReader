@@ -69,7 +69,6 @@ class CSVCombineHelper(object):
             label = self.get_column_name(path)
             try:
                 reader = self.build_data_object(path)
-                print path
                 data = self.data_prepare(reader)
                 result[label] = data
 
