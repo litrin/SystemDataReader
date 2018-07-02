@@ -1,4 +1,4 @@
-from DataReader.base import RawDataFileReader
+from .base import RawDataFileReader
 
 
 

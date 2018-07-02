@@ -1,4 +1,4 @@
-from base import RawDataFileReader
+from .base import RawDataFileReader
 
 
 class RedisBenchmarkData(RawDataFileReader):
