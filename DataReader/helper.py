@@ -1,7 +1,7 @@
 import os
 import re
 import pandas as pd
-from base import DataReaderError
+from .base import DataReaderError
 
 
 class CSVCombineHelper(object):
@@ -19,7 +19,9 @@ class CSVCombineHelper(object):
         :param main_path: str the main data path
         :param builder: run able data frame builder
         """
-        self.builder = builder
+        if builder is not None:
+            self.builder = builder
+
         for f in os.listdir(main_path):
             abs_name = os.path.join(main_path, f)
             if os.path.isfile(abs_name):
@@ -67,6 +69,7 @@ class CSVCombineHelper(object):
             label = self.get_column_name(path)
             try:
                 reader = self.build_data_object(path)
+                print path
                 data = self.data_prepare(reader)
                 result[label] = data
 
