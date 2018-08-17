@@ -48,17 +48,17 @@ class CSVCombineHelper(object):
         """
         return data_entry
 
-    def dump_excel(self, filename="data.xls"):
+    def dump_excel(self, filename="data.xls", sort=None):
         """
         Save data file as excel.
 
         :param filename: str filename
         :return: None
         """
-        df = self.get_dataframe()
+        df = self.get_dataframe(sort)
         df.to_excel(filename)
 
-    def get_dataframe(self):
+    def get_dataframe(self, sort=None):
         """
         method for get data
 
@@ -76,6 +76,13 @@ class CSVCombineHelper(object):
                 raise DataReaderError(e.message)
 
         result = pd.DataFrame(result)
+
+        if sort is not None:
+            columns = result.columns.tolist()
+            columns.sort(cmp=sort)
+
+            return result[columns]
+
         return result
 
     def get_column_name(self, full_path):
