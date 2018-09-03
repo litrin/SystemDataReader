@@ -63,6 +63,16 @@ class RawDataFileReader(object):
                 if regex.match(row):
                     yield row
 
+    def read_line(self, start, end=0):
+        """
+        Get content from row number
+        :param start: int
+        :param end: int
+        :return: iterator
+        """
+        content = self.reader()
+        return content[start - 1:end - 1]
+
     @property
     def create_time(self):
         return os.path.getctime(self.filename)
