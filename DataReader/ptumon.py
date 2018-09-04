@@ -1,4 +1,4 @@
-from .base import RawDataFileReader
+from base import RawDataFileReader
 import pandas as pd
 
 
@@ -7,7 +7,7 @@ class PtumonSKX(RawDataFileReader):
 
     column_name = ["Time", "Dev", "Cor", "Thr", "CFreq", "UFreq", "T", "Util",
                    "IPC", "DTS", "Temp", "Volt", "Power", "TotPwr", "TDP",
-                   "TStat", "TLog", "#TL", "TMargin"]
+                   "TStat", "TLog", "#TL", "TMargin", "SID"]
 
     def __init__(self, filename):
         self.filename = filename
@@ -18,8 +18,10 @@ class PtumonSKX(RawDataFileReader):
         csv_body = []
         for i in data_entries:
             row = i.split(",")
-            row[0] = float(row[0][:10])
-            csv_body.append(dict(zip(self.column_name, row)))
+            row = dict(zip(self.column_name, row))
+            row["Time"], row["SID"] = tuple(row["Time"].split("_"))
+
+            csv_body.append(row)
 
         data = pd.DataFrame(csv_body)
         return data.apply(pd.to_numeric, errors='ignore')
