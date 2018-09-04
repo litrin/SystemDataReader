@@ -3,7 +3,7 @@ from .base import RawDataFileReader
 
 
 class SPECpower2008(RawDataFileReader):
-    row_num = (0, -1)
+    row_num = (0, 0)
     column_name = ["TargetLoad", "ActualLoad", "TargetjOPS", "ActualjOPS"]
 
     def __init__(self, filename, row_num=(225, 235)):
@@ -25,3 +25,13 @@ class SPECpower2008(RawDataFileReader):
             data.append(row)
 
         return pd.DataFrame(data)
+
+    @property
+    def jops(self):
+        return self.content
+
+    @property
+    def calibrated(self):
+        data = self.content
+        return data.TargetjOPS.max()
+
