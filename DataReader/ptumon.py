@@ -13,7 +13,7 @@ class PtumonSKX(RawDataFileReader):
         self.filename = filename
 
     def get_data(self, keyword):
-        reg = r"^\d{6}\.\d{3}_\d+\,%s" % keyword.upper()
+        reg = r"^\d{6}\.\d{3}_\d+\s*\,%s" % keyword.upper()
         data_entries = self.egrep(reg)
         csv_body = []
         for i in data_entries:
@@ -28,3 +28,9 @@ class PtumonSKX(RawDataFileReader):
 
     def __getattr__(self, item):
         return self.get_data(item)
+
+    def __getitem__(self, item):
+        return self.get_data(item)
+
+
+
