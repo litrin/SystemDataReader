@@ -1,4 +1,4 @@
-from base import RawDataFileReader
+from .base import RawDataFileReader
 import pandas as pd
 
 
@@ -31,6 +31,3 @@ class PtumonSKX(RawDataFileReader):
 
     def __getitem__(self, item):
         return self.get_data(item)
-
-
-

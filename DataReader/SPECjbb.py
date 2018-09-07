@@ -1,9 +1,20 @@
 import os
 import pandas as pd
-
 from .base import RawDataFileReader
 
-__all__ = ["SPECjbb2015Score", "SPECjbb2015TotalPurchaseData"]
+__all__ = ["SPECjbb2015Score", "SPECjbb2015TotalPurchaseData",
+           "SPECjbb2005Score"]
+
+
+class SPECjbb2005Score(RawDataFileReader):
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    @property
+    def throughput(self):
+        content = self.grep("throughput")
+        return float(content[0].split()[2])
 
 
 class SPECjbb2015ResultsErr(BaseException):
