@@ -9,7 +9,7 @@ class CSVCombineHelper(object):
     A framework to list all child paths, combine data to a data frame.
     """
     builder = None
-    file_list = []
+    root_path = None
     data_set = None
 
     def __init__(self, main_path, builder=None):
@@ -19,15 +19,23 @@ class CSVCombineHelper(object):
         :param main_path: str the main data path
         :param builder: run able data frame builder
         """
+        self.root_path = main_path
         if builder is not None:
             self.builder = builder
 
-        for f in os.listdir(main_path):
-            abs_name = os.path.join(main_path, f)
+    def path_walk(self):
+        """
+        ergodic all sub-paths
+
+        :return: iterator
+        """
+        path = self.root_path
+        for f in os.listdir(path):
+            abs_name = os.path.join(path, f)
             if os.path.isfile(abs_name):
                 continue
 
-            self.file_list.append(abs_name)
+            yield abs_name
 
     def build_data_object(self, path):
         """
@@ -65,7 +73,7 @@ class CSVCombineHelper(object):
         :return: data frame object
         """
         result = {}
-        for path in self.file_list:
+        for path in self.path_walk():
             label = self.get_column_name(path)
             try:
                 reader = self.build_data_object(path)
