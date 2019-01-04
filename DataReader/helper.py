@@ -195,6 +195,27 @@ class CPUCoreList(object):
             yield core
 
 
+class UnitConverter:
+    mapper = {"k": (2 ** 10, 10 ** 3),
+              "m": (2 ** 20, 10 ** 6),
+              "g": (2 ** 30, 10 ** 9),
+              "t": (2 ** 40, 10 ** 12),
+              }
+
+    value = 0
+
+    def __init__(self, value):
+        if isinstance(value, int) or isinstance(value, float):
+            self.value = float(value)
+        else:
+            value = str(value).lower()
+            unit = value[-1]
+            if unit not in self.mapper.keys():
+                self.value = float(value)
+            else:
+                self.value = float(value[:-1]) * self.mapper[unit][0]
+
+
 class ExcelSheet:
     writer = None
     sheet_number = 0
