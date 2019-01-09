@@ -16,7 +16,7 @@ class PQoSReader(RawDataFileReader):
         data = []
         skip = 0
         for lines, entry in enumerate(self.reader()):
-            if re.match(r"^\s?\d+", entry) is None:
+            if re.match(r"^\s*\d+", entry) is None:
                 continue
             try:
                 entry = dict(zip(self.headers, entry.split()))
