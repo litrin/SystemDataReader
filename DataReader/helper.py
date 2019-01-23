@@ -81,7 +81,7 @@ class CSVCombineHelper(object):
                 result[label] = data
 
             except Exception as e:
-                raise DataReaderError(e.message)
+                raise DataReaderError(str(e))
 
         result = pd.DataFrame(result)
 
@@ -140,13 +140,16 @@ class CPUCoreList(object):
         for element in cpu_set.split(self.sep):
             if len(element) is 0:
                 continue
+
             if element.find("-") is not -1:
                 element = element.split("-")
+                core_num_start = int(element[0])
                 core_num_end = int(element[1])
-                if core_num_end < min:
-                    core_num_end, min = min, core_num_end
 
-                for core in range(min, core_num_end + 1):
+                if core_num_end < core_num_start:
+                    core_num_end, core_num_start = core_num_start, core_num_end
+
+                for core in range(core_num_start, core_num_end + 1):
                     cpus.add(core)
             else:
                 cpus.add(int(element))
