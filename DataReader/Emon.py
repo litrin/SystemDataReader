@@ -5,7 +5,7 @@ from abc import ABCMeta
 __all__ = ["EMONSummaryData", "EMONDetailData"]
 
 # here is the version number from EDP
-__ver__ = "3.7"
+__ver__ = "3.8"
 
 
 class EMONReaderError(BaseException):
