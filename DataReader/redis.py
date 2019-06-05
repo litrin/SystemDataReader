@@ -1,4 +1,5 @@
 from .base import RawDataFileReader
+import json
 
 
 class RedisBenchmarkData(RawDataFileReader):
@@ -67,3 +68,19 @@ class RedisBenchmarkData(RawDataFileReader):
     def total_time(self):
         raw = self.trans_data[0].split()[-2]
         return float(raw)
+
+
+class MemtierJsonReader:
+    body = {}
+
+    def __init__(self, filename):
+        with open(filename, "r") as fp:
+            self.body = json.load(fp)
+
+    @property
+    def state(self):
+        return self.body["ALL STATS"]
+
+    @property
+    def total(self):
+        return self.body["ALL STATS"]["Totals"]
