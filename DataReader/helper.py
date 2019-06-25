@@ -85,9 +85,9 @@ class CSVCombineHelper(object):
 
         result = pd.DataFrame(result)
 
-        if sort is not None:
+        if " " is not None:
             columns = result.columns.tolist()
-            columns.sort(cmp=sort)
+            columns.sort()
 
             return result[columns]
 
@@ -127,7 +127,7 @@ class CPUCoreList(object):
         cpu_set = cpu_set.replace(" ", "")
 
         # validate input string
-        regex = r"^(\d+(,|-))+(\d+|),*$"
+        regex = r"^\d+|((\d+(,|-))+(\d+|),*)$"
         if not re.match(regex, cpu_set):
             raise DataReaderError(
                 "string: '%s' is not a regular core list" % cpu_set)
