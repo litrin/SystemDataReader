@@ -87,3 +87,31 @@ class DataReaderError(BaseException):
     Base error handler
     """
     pass
+
+
+class DataCacheObject:
+    """
+    Cache data object
+    """
+
+    _data_cache = None  # the cache object
+
+    def get_content(self):
+        """
+        main function to get real data, must be overrode by child!!!
+
+        :return: data object
+        """
+        raise ImportError("method get_dataframe must be overrode by child!")
+
+    @property
+    def data(self):
+        """
+        this is the entry what provides access interface to data cached
+
+        :return: Data object
+        """
+        if self._data_cache is None:
+            self._data_cache = self.get_content()
+
+        return self._data_cache

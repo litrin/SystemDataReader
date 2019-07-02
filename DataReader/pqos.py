@@ -1,9 +1,9 @@
-from .base import RawDataFileReader
+from .base import RawDataFileReader, DataCacheObject
 import pandas as pd
 import re
 
 
-class PQoSReader(RawDataFileReader):
+class PQoSReader(RawDataFileReader, DataCacheObject):
     headers = ['CORE', 'IPC', 'MISSES', 'LLC', 'MBL', 'MBR']
     sample_range = None
 
@@ -11,8 +11,7 @@ class PQoSReader(RawDataFileReader):
         self.filename = input
         self.sample_range = sample_range
 
-    @property
-    def data(self):
+    def get_content(self):
         data = []
         skip = 0
         for lines, entry in enumerate(self.reader()):
@@ -23,7 +22,7 @@ class PQoSReader(RawDataFileReader):
 
                 entry["IPC"] = float(entry["IPC"])
                 # sometime there haven't breaks between column IPC and MISSES
-                assert (entry["IPC"] < 4) # resonable IPC value
+                assert (entry["IPC"] < 4)  # resonable IPC value
 
                 entry["MISSES"] = int(entry["MISSES"][:-1]) << 10
 

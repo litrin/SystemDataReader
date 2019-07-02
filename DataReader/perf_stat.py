@@ -1,8 +1,8 @@
-from .base import RawDataFileReader
+from .base import RawDataFileReader, DataCacheObject
 import pandas as pd
 
 
-class PerfStatReader(RawDataFileReader):
+class PerfStatReader(RawDataFileReader, DataCacheObject):
 
     def __init__(self, filename):
         self.filename = filename
@@ -19,6 +19,9 @@ class PerfStatReader(RawDataFileReader):
     def __getattr__(self, item):
         return pd.Series(self.get_event(item))
 
-    def get_dataframe(self, columns):
+    def __getitem__(self, item):
+        return self.get_content(list(item))
+
+    def get_content(self, columns):
         data = {field: getattr(self, field) for field in columns}
         return pd.DataFrame(data)

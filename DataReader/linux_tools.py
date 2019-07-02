@@ -1,9 +1,9 @@
-from .base import RawDataFileReader
+from .base import RawDataFileReader, DataCacheObject
 from .helper import CPUCoreList
 import pandas as pd
 
 
-class VmstatReader(RawDataFileReader):
+class VmstatReader(RawDataFileReader, DataCacheObject):
     # need more detail column name
     header = ["r", "b", "swpd", "free", "buff", "cache", "si", "so", "bi",
               "bo", "in", "cs", "us", "sy", "id", "wa", "st"
@@ -15,7 +15,7 @@ class VmstatReader(RawDataFileReader):
         if header is not None:
             self.header = header
 
-    def get_data_frame(self):
+    def get_content(self):
         data = []
         for row in self.grep_iterator(r"^\d"):
             data.append(row.split())
@@ -25,10 +25,19 @@ class VmstatReader(RawDataFileReader):
 
     @property
     def all(self):
-        return self.get_data_frame()
+        if self._data_cache is None:
+            self._data_cache = self.get_content()
+        return self._data_cache
+
+    def __getitem__(self, item):
+        if item not in self.header:
+            return None
+        df = self.all
+        ret = df[item]
+        return ret
 
 
-class SarReader(RawDataFileReader):
+class SarReader(RawDataFileReader, DataCacheObject):
     """
     Please collect sar data by this command:  sar -P ALL <interval> <count>
     """
@@ -38,7 +47,7 @@ class SarReader(RawDataFileReader):
     def __init__(self, filename, header=None):
         self.filename = filename
 
-    def get_dat_fram(self):
+    def get_content(self):
         data = []
         for row in self.grep_iterator(self.data_row_reg):
             data.append(self.format_row(row))
@@ -47,16 +56,12 @@ class SarReader(RawDataFileReader):
 
     def format_row(self, row):
         row = row.split()
-        data = [row[2]]
+        data = [row[2]]  # column 2 is core ID
 
         for element in row[3:]:
             data.append(float(element[:-1]))
 
         return data
-
-    @property
-    def data(self):
-        return self.get_dat_fram()
 
     def __getitem__(self, item):
         if item.lower() == "all":
@@ -64,7 +69,7 @@ class SarReader(RawDataFileReader):
             ret = df[df['CPU#'] == 'all']
             return ret
 
-        core_list = map(str, CPUCoreList(item))
+        core_list = list(map(str, CPUCoreList(item)))
         df = self.data
         ret = df[df["CPU#"].isin(core_list)]
         return ret

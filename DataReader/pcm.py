@@ -1,7 +1,8 @@
 import pandas as pd
+from .base import DataCacheObject
 
 
-class BasePMCCSVReader:
+class BasePMCCSVReader(DataCacheObject):
     filename = None
     separator = ";"
 
@@ -29,11 +30,12 @@ class BasePMCCSVReader:
         :return: list
         """
         fd = open(self.filename, "r")
-        file_head = fd.readlines(2)
+        file_head = fd.readlines()
         fd.close()
 
         zip_heads = zip(file_head[0].split(self.separator),
                         file_head[1].split(self.separator))
+
         metric_names = []
         category = ""
         for _category, metric in zip_heads:
@@ -44,10 +46,6 @@ class BasePMCCSVReader:
             metric_names.append("%s.%s" % (category, metric))
 
         return metric_names[:-1]
-
-    @property
-    def data(self):
-        return self.get_data_frame()
 
 
 class PCMCSVReader(BasePMCCSVReader):
