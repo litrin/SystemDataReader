@@ -1,5 +1,6 @@
-from DataReader.base import RawDataFileReader
 import re
+
+from DataReader.base import RawDataFileReader
 
 __version__ = "fio-3.1"
 

@@ -1,5 +1,6 @@
-from .base import RawDataFileReader
 from xml.etree import ElementTree
+
+from .base import RawDataFileReader
 
 
 class WebSearchResult(RawDataFileReader):

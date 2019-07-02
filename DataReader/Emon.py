@@ -1,6 +1,7 @@
-import pandas as pd
 import os
 from abc import ABCMeta
+
+import pandas as pd
 
 __all__ = ["EMONSummaryData", "EMONDetailData"]
 

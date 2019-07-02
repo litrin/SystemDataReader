@@ -1,6 +1,8 @@
-from .base import RawDataFileReader, DataCacheObject
-import pandas as pd
 import re
+
+import pandas as pd
+
+from .base import RawDataFileReader, DataCacheObject
 
 
 class PQoSReader(RawDataFileReader, DataCacheObject):

@@ -1,5 +1,6 @@
-from .base import RawDataFileReader
 import pandas as pd
+
+from .base import RawDataFileReader
 
 
 class PtumonSKX(RawDataFileReader):

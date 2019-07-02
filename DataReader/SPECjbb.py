@@ -1,5 +1,7 @@
 import os
+
 import pandas as pd
+
 from .base import RawDataFileReader
 
 __all__ = ["SPECjbb2015Score", "SPECjbb2015TotalPurchaseData",

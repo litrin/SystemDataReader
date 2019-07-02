@@ -1,5 +1,6 @@
-from .base import RawDataFileReader, DataCacheObject
 import pandas as pd
+
+from .base import RawDataFileReader, DataCacheObject
 
 
 class PerfStatReader(RawDataFileReader, DataCacheObject):

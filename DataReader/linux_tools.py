@@ -1,6 +1,7 @@
+import pandas as pd
+
 from .base import RawDataFileReader, DataCacheObject
 from .helper import CPUCoreList
-import pandas as pd
 
 
 class VmstatReader(RawDataFileReader, DataCacheObject):
@@ -17,7 +18,7 @@ class VmstatReader(RawDataFileReader, DataCacheObject):
 
     def get_content(self):
         data = []
-        for row in self.grep_iterator(r"^\d"):
+        for row in self.grep_iterator(r"^\s?\d"):
             data.append(row.split())
         df = pd.DataFrame(data, columns=self.header, dtype=float)
 
