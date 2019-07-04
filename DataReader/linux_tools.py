@@ -3,6 +3,8 @@ import pandas as pd
 from .base import RawDataFileReader, DataCacheObject
 from .helper import CPUCoreList
 
+__all__ = ["VmstatReader", "SarReader"]
+
 
 class VmstatReader(RawDataFileReader, DataCacheObject):
     # need more detail column name
@@ -29,13 +31,6 @@ class VmstatReader(RawDataFileReader, DataCacheObject):
         if self._data_cache is None:
             self._data_cache = self.get_content()
         return self._data_cache
-
-    def __getitem__(self, item):
-        if item not in self.header:
-            return None
-        df = self.all
-        ret = df[item]
-        return ret
 
 
 class SarReader(RawDataFileReader, DataCacheObject):
@@ -70,7 +65,7 @@ class SarReader(RawDataFileReader, DataCacheObject):
             ret = df[df['CPU#'] == 'all']
             return ret
 
-        core_list = list(map(str, CPUCoreList(item)))
+        core_list = map(str, CPUCoreList(item))
         df = self.data
         ret = df[df["CPU#"].isin(core_list)]
         return ret

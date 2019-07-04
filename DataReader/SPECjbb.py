@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from .base import RawDataFileReader
+from .base import RawDataFileReader, DataCacheObject
 
 __all__ = ["SPECjbb2015Score", "SPECjbb2015TotalPurchaseData",
            "SPECjbb2005Score"]
@@ -71,10 +71,14 @@ class SPECjbb2015Score(object):
         return len(self.csv_content)
 
 
-class SPECjbb2015TotalPurchaseData(RawDataFileReader):
+class SPECjbb2015TotalPurchaseData(RawDataFileReader, DataCacheObject):
     """
     Read response times from specjbb2015 output file
     """
+
+    # the column name in log files
+    header = ["Success", "Partial", "Failed", "SkipFail", "Probes", "Samples",
+              "min", "p50", "p90", "p95", "p99", "max"]
 
     def __init__(self, filename):
         """
@@ -90,15 +94,14 @@ class SPECjbb2015TotalPurchaseData(RawDataFileReader):
 
         return result
 
+    def get_content(self):
+        data = pd.DataFrame(self.read_output_content(), dtype=float,
+                            columns=self.header)
+        return data
+
     @property
     def all(self):
-        data = pd.DataFrame(self.read_output_content(), dtype=float,
-                            columns=["Success", "Partial",
-                                     "Failed", "SkipFail",
-                                     "Probes", "Samples",
-                                     "min", "p50", "p90",
-                                     "p95", "p99", "max"])
-        return data
+        return self.data
 
     @property
     def p50(self):
