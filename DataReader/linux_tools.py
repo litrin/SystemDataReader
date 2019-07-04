@@ -28,9 +28,7 @@ class VmstatReader(RawDataFileReader, DataCacheObject):
 
     @property
     def all(self):
-        if self._data_cache is None:
-            self._data_cache = self.get_content()
-        return self._data_cache
+        return self.data
 
 
 class SarReader(RawDataFileReader, DataCacheObject):
