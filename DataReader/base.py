@@ -2,6 +2,8 @@ import os
 import re
 import sys
 
+__all__ = ["RawDataFileReader", "DataCacheObject", "DataReaderError"]
+
 
 class RawDataFileReader(object):
     """
@@ -22,7 +24,7 @@ class RawDataFileReader(object):
         """
         if cache_refresh or self._raw_data_cache is None:
             if not os.path.exists(self.filename):
-                raise NameError(
+                raise DataReaderError(
                     "Raw data file %s is not exist" % self.filename)
             with open(self.filename, "r") as fd:
                 self._raw_data_cache = fd.readlines()
@@ -103,7 +105,8 @@ class DataCacheObject:
 
         :return: data object
         """
-        raise ImportError("method get_dataframe must be overrode by child!")
+        raise DataReaderError(
+            "method get_dataframe must be overrode by child!")
 
     @property
     def data(self):
@@ -122,4 +125,3 @@ class DataCacheObject:
             return None
 
         return self.data[item]
-

@@ -1,19 +1,20 @@
 import os
 from abc import ABCMeta
+from .base import DataReaderError
 
 import pandas as pd
 
 __all__ = ["EMONSummaryData", "EMONDetailData"]
 
 # here is the version number from EDP
-__ver__ = "3.8"
+__ver__ = "3.9"
 
 
-class EMONReaderError(BaseException):
+class EMONReaderError(DataReaderError):
     pass
 
 
-class EMONDataError(BaseException):
+class EMONDataError(DataReaderError):
     pass
 
 

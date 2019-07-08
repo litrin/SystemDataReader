@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from .base import RawDataFileReader, DataCacheObject
+from .base import RawDataFileReader, DataCacheObject, DataReaderError
 
 __all__ = ["SPECjbb2015Score", "SPECjbb2015TotalPurchaseData",
            "SPECjbb2005Score"]
@@ -19,7 +19,7 @@ class SPECjbb2005Score(RawDataFileReader):
         return float(content[0].split()[2])
 
 
-class SPECjbb2015ResultsErr(BaseException):
+class SPECjbb2015ResultsErr(DataReaderError):
     pass
 
 

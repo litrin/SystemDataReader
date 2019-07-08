@@ -1,6 +1,6 @@
 import json
 
-from .base import RawDataFileReader
+from .base import RawDataFileReader, DataReaderError
 
 
 class RedisBenchmarkData(RawDataFileReader):
@@ -48,7 +48,7 @@ class RedisBenchmarkData(RawDataFileReader):
                     self.trans_data.append(row)
 
         if not found_tag:
-            raise EOFError("Cannot find %s data" % trans)
+            raise DataReaderError("Cannot find %s data" % trans)
 
     @property
     def client(self):

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .base import RawDataFileReader, DataCacheObject
+from .base import RawDataFileReader, DataCacheObject, DataReaderError
 
 
 class PerfStatReader(RawDataFileReader, DataCacheObject):
@@ -36,6 +36,7 @@ class PerfStatReader(RawDataFileReader, DataCacheObject):
 
     def __getitem__(self, item):
         if item not in self.header:
-            raise IndexError("Can not find event: '%s' in this file" % item)
+            raise DataReaderError(
+                "Can not find event: '%s' in this file" % item)
 
         return self.data[self.data["event"] == item]
