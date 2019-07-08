@@ -94,7 +94,7 @@ class DataCacheObject:
     Cache data object
     """
 
-    _data_cache = {}  # the cache object with dict
+    _data_cache = None  # the cache object with dict
     header = []
 
     def get_content(self):
@@ -122,3 +122,4 @@ class DataCacheObject:
             return None
 
         return self.data[item]
+
