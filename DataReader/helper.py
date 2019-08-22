@@ -3,10 +3,10 @@ import re
 
 import pandas as pd
 
-from .base import DataReaderError
+from .base import DataReaderError, DataCacheObject
 
 
-class CSVCombineHelper(object):
+class CSVCombineHelper(DataCacheObject):
     """
     A framework to list all child paths, combine data to a data frame.
     """
@@ -94,6 +94,9 @@ class CSVCombineHelper(object):
             return result[columns]
 
         return result
+
+    def get_content(self):
+        return self.get_dataframe()
 
     def get_column_name(self, full_path):
         """
@@ -223,17 +226,22 @@ class UnitConverter:
 
 class ExcelSheet:
     writer = None
-    sheet_number = 0
+    sheets = []
 
     def __init__(self, filename):
         self.writer = pd.ExcelWriter(filename)
 
     def __del__(self):
-        self.writer.close()
+        if self.writer is not None:
+            self.close()
 
     def add_sheet(self, df, sheet_label=None):
-        self.sheet_number += 1
         if sheet_label is None:
-            sheet_label = "sheet%s" % self.sheet_number
+            sheet_label = "sheet%s" % 1 + len(self.sheets)
 
+        self.sheets.append(sheet_label)
         df.to_excel(self.writer, sheet_name=sheet_label)
+
+    def close(self):
+        self.writer.close()
+        self.writer = None
