@@ -13,6 +13,9 @@ class PtumonSKX(RawDataFileReader):
     def __init__(self, filename):
         self.filename = filename
 
+    def set_header(self, header):
+        self.column_name = header
+
     def get_data(self, keyword):
         reg = r"^\d{6}\.\d{3}_\d+\s*\,%s" % keyword.upper()
         data_entries = self.egrep(reg)
