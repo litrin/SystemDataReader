@@ -2,7 +2,10 @@ import os
 import re
 import sys
 
-__all__ = ["RawDataFileReader", "DataCacheObject", "DataReaderError"]
+import pandas as pd
+
+__all__ = ["RawDataFileReader", "DataCacheObject", "DataReaderError",
+           "LinuxColumnStyleOutputReader"]
 
 
 class RawDataFileReader(object):
@@ -125,3 +128,26 @@ class DataCacheObject:
             return None
 
         return self.data[item]
+
+
+class LinuxColumnStyleOutputReader(RawDataFileReader, DataCacheObject):
+    data_row_regex = r".*"
+
+    def __init__(self, filename, column_name_list=None):
+        self.filename = filename
+        self.set_column_name(column_name_list)
+
+    def set_column_name(self, column_name_list=None):
+        if column_name_list is not None:
+            self.header = column_name_list
+
+    def get_content(self):
+        data = []
+        for row in self.grep_iterator(self.data_row_regex):
+            data.append(self.data_formatter(row))
+        df = pd.DataFrame(data, columns=self.header, dtype=float)
+
+        return df
+
+    def data_formatter(self, row):
+        return row.split()

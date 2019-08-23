@@ -1,54 +1,25 @@
-import pandas as pd
-
-from .base import RawDataFileReader, DataCacheObject
+from .base import LinuxColumnStyleOutputReader
 from .helper import CPUCoreList
 
-__all__ = ["VmstatReader", "SarReader"]
+__all__ = ["VmstatStyleOutputReader", "SarStyleOutputReader",
+           "TurbostatStyleOutputReader"]
 
 
-class VmstatReader(RawDataFileReader, DataCacheObject):
+class VmstatStyleOutputReader(LinuxColumnStyleOutputReader):
+    data_row_regex = r"^\s?\d"
     # need more detail column name
     header = ["r", "b", "swpd", "free", "buff", "cache", "si", "so", "bi",
-              "bo", "in", "cs", "us", "sy", "id", "wa", "st"
-              ]
-
-    def __init__(self, filename, header=None):
-        self.filename = filename
-
-        if header is not None:
-            self.header = header
-
-    def get_content(self):
-        data = []
-        for row in self.grep_iterator(r"^\s?\d"):
-            data.append(row.split())
-        df = pd.DataFrame(data, columns=self.header, dtype=float)
-
-        return df
-
-    @property
-    def all(self):
-        return self.data
+              "bo", "in", "cs", "us", "sy", "id", "wa", "st"]
 
 
-class SarReader(RawDataFileReader, DataCacheObject):
+class SarStyleOutputReader(LinuxColumnStyleOutputReader):
     """
     Please collect sar data by this command:  sar -P ALL <interval> <count>
     """
     header = ["CPU#", "user", "nice", "sys", "io", "steal", "idle"]
-    data_row_reg = r"^(\d{2}:)\d{2}.*(A|P)M.*(\d+|ALL)"
+    data_row_regex = r"^(\d{2}:)\d{2}.*(A|P)M.*(\d+|ALL)"
 
-    def __init__(self, filename, header=None):
-        self.filename = filename
-
-    def get_content(self):
-        data = []
-        for row in self.grep_iterator(self.data_row_reg):
-            data.append(self.format_row(row))
-
-        return pd.DataFrame(data, columns=self.header)
-
-    def format_row(self, row):
+    def data_formatter(self, row):
         row = row.split()
         data = [row[2]]  # column 2 is core ID
 
@@ -67,3 +38,24 @@ class SarReader(RawDataFileReader, DataCacheObject):
         df = self.data
         ret = df[df["CPU#"].isin(core_list)]
         return ret
+
+
+class TurbostatStyleOutputReader(LinuxColumnStyleOutputReader):
+    __version__ = "18.0"
+    data_row_regex = r"^\d.*\d$"
+
+    def set_column_name(self, column_name_list=None):
+        if column_name_list is not None:
+            self.header = column_name_list
+        else:
+            with open(self.filename) as fd:
+                column_name_list = fd.readline()
+            self.header = column_name_list.split()
+
+    @property
+    def cores(self):
+        core_list = map(int, self.data["CPU"].unique())
+        return CPUCoreList(core_list)
+
+    def __getitem__(self, item):
+        return self.data[self.data["CPU"] == item]
