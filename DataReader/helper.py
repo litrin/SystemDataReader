@@ -1,6 +1,5 @@
 import os
 import re
-from collections.abc import Iterable
 
 import pandas as pd
 
@@ -127,7 +126,7 @@ class CPUCoreList(object):
         :param cpu_set: string
         :param sep: string
         """
-        if isinstance(cpu_set, Iterable):
+        if isinstance(cpu_set, list):
             cpu_set = sep.join([str(core) for core in cpu_set])
 
         cpu_set = cpu_set.replace(" ", "")
