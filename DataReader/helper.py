@@ -127,7 +127,8 @@ class CPUCoreList(object):
         :param cpu_set: string
         :param sep: string
         """
-        if isinstance(cpu_set, Iterable):
+
+        if isinstance(cpu_set, Iterable) and not isinstance(cpu_set, str):
             cpu_set = sep.join([str(core) for core in cpu_set])
 
         cpu_set = cpu_set.replace(" ", "")

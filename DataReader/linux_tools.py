@@ -1,18 +1,18 @@
 from .base import LinuxColumnStyleOutputReader
 from .helper import CPUCoreList
 
-__all__ = ["VmstatStyleOutputReader", "SarStyleOutputReader",
-           "TurbostatStyleOutputReader"]
+__all__ = ["VmstatReader", "SarReader",
+           "TurbostatReader"]
 
 
-class VmstatStyleOutputReader(LinuxColumnStyleOutputReader):
+class VmstatReader(LinuxColumnStyleOutputReader):
     data_row_regex = r"^\s?\d"
     # need more detail column name
     header = ["r", "b", "swpd", "free", "buff", "cache", "si", "so", "bi",
               "bo", "in", "cs", "us", "sy", "id", "wa", "st"]
 
 
-class SarStyleOutputReader(LinuxColumnStyleOutputReader):
+class SarReader(LinuxColumnStyleOutputReader):
     """
     Please collect sar data by this command:  sar -P ALL <interval> <count>
     """
@@ -40,7 +40,7 @@ class SarStyleOutputReader(LinuxColumnStyleOutputReader):
         return ret
 
 
-class TurbostatStyleOutputReader(LinuxColumnStyleOutputReader):
+class TurbostatReader(LinuxColumnStyleOutputReader):
     __version__ = "18.0"
     data_row_regex = r"^\d.*\d$"
 
@@ -58,4 +58,5 @@ class TurbostatStyleOutputReader(LinuxColumnStyleOutputReader):
         return CPUCoreList(core_list)
 
     def __getitem__(self, item):
-        return self.data[self.data["CPU"] == item]
+        core_list = CPUCoreList(item)
+        return self.data[self.data["CPU"].isin(core_list.get_list())]
