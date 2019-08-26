@@ -2,7 +2,7 @@ from .base import RawDataFileReader
 
 
 
-class CLIOptionReaderBase(RawDataFileReader):
+class BaseCLIOptionReader(RawDataFileReader):
     def __init__(self, filename=None):
         self.filename = filename
 
@@ -11,12 +11,12 @@ class CLIOptionReaderBase(RawDataFileReader):
         return result[1].strip()
 
 
-class CLIOptionReader(CLIOptionReaderBase):
+class CLIOptionReader(BaseCLIOptionReader):
     def __getattr__(self, item):
         return self.get_info(item)
 
 
-class CommandlscpuInfo(CLIOptionReaderBase):
+class CommandlscpuInfo(BaseCLIOptionReader):
     __version__ = 2.23
 
     @property
