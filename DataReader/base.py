@@ -131,17 +131,37 @@ class DataCacheObject:
 
 
 class LinuxColumnStyleOutputReader(RawDataFileReader, DataCacheObject):
-    data_row_regex = r".*"
+    """
+    Base class to read data tables separated by rows
+    """
+
+    data_row_regex = r".*"  # regex for data line filtering.
 
     def __init__(self, filename, column_name_list=None):
+        """
+
+        :param filename: filename
+        :param column_name_list: list
+        """
         self.filename = filename
         self.set_column_name(column_name_list)
 
     def set_column_name(self, column_name_list=None):
+        """
+        Set the column names as data table header
+
+        :param column_name_list: list
+        :return: None
+        """
         if column_name_list is not None:
             self.header = column_name_list
 
     def get_content(self):
+        """
+        Read data file and build up a pandas data frame
+
+        :return: pandas data table
+        """
         data = []
         for row in self.grep_iterator(self.data_row_regex):
             data.append(self.data_formatter(row))
@@ -150,4 +170,10 @@ class LinuxColumnStyleOutputReader(RawDataFileReader, DataCacheObject):
         return df
 
     def data_formatter(self, row):
+        """
+        Formatter for a single data line.
+
+        :param row: str
+        :return: list
+        """
         return row.split()

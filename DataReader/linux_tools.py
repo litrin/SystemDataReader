@@ -42,7 +42,7 @@ class SarReader(LinuxColumnStyleOutputReader):
 
 class TurbostatReader(LinuxColumnStyleOutputReader):
     __version__ = "18.0"
-    data_row_regex = r"^\d.*\d$"
+    data_row_regex = r"^(\d{1,3}|\-).*\d$"
 
     def set_column_name(self, column_name_list=None):
         if column_name_list is not None:
@@ -52,11 +52,25 @@ class TurbostatReader(LinuxColumnStyleOutputReader):
                 column_name_list = fd.readline()
             self.header = column_name_list.split()
 
+    def data_formatter(self, row):
+        row = row.split()
+        # mark global state as "-1"
+        if row[0] == "-":
+            row[0], row[1], row[2] = -1, -1, -1
+        return row
+
     @property
     def cores(self):
         core_list = map(int, self.data["CPU"].unique())
         return CPUCoreList(core_list)
 
     def __getitem__(self, item):
+        if item == 'all' or item == -1:
+            return self.aggregate
+
         core_list = CPUCoreList(item)
         return self.data[self.data["CPU"].isin(core_list.get_list())]
+
+    @property
+    def aggregate(self):
+        return self.data[self.data["CPU"] == -1]
