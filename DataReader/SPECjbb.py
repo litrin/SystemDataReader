@@ -15,7 +15,7 @@ class SPECjbb2005Score(RawDataFileReader):
 
     @property
     def throughput(self):
-        content = self.grep("throughput")
+        content = list(self.grep("throughput"))
         return float(content[0].split()[2])
 
 
