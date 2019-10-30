@@ -23,7 +23,7 @@ class EMONCSVReader(object):
     Base Emon/edp csv data reader
     """
     __metaclass__ = ABCMeta
-    # define the view type
+    # define the view workload_type
     SYSTEM = "system"
     CORE = "core"
     SOCKET = "socket"
