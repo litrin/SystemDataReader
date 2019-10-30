@@ -108,8 +108,12 @@ class SPECjbb2015TotalPurchaseData(RawDataFileReader, DataCacheObject):
         return self.all.p50
 
     @property
+    def min(self):
+        return self.all["min"]
+
+    @property
     def max(self):
-        return self.all.max
+        return self.all["max"]
 
     def __len__(self):
         return len(self.all)

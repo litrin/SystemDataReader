@@ -239,7 +239,7 @@ class ExcelSheet:
 
     def add_sheet(self, df, sheet_label=None):
         if sheet_label is None:
-            sheet_label = "sheet%s" % 1 + len(self.sheets)
+            sheet_label = "sheet%s" % (1 + len(self.sheets))
 
         self.sheets.append(sheet_label)
         df.to_excel(self.writer, sheet_name=sheet_label)

@@ -33,7 +33,7 @@ class PQoSReader(RawDataFileReader, DataCacheObject):
                 data.append(entry)
 
             except AssertionError:
-                print("spliting fail for %s, skip this record" % self.filename)
+                print("spliting fail at %s, skip this record" % self.filename)
 
             except:
                 skip += 1

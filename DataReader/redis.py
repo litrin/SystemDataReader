@@ -1,6 +1,7 @@
 import json
 
-from .base import RawDataFileReader, DataReaderError
+from .base import RawDataFileReader, DataReaderError, DataCacheObject
+import pandas as pd
 
 
 class RedisBenchmarkData(RawDataFileReader):
@@ -22,7 +23,7 @@ class RedisBenchmarkData(RawDataFileReader):
 
     def set_transaction(self, trans):
         """
-        Set redis transaction type
+        Set redis transaction workload_type
 
         :param trans: trans code
         :return: None
@@ -85,3 +86,25 @@ class MemtierJsonReader:
     @property
     def total(self):
         return self.body["ALL STATS"]["Totals"]
+
+
+class MemtierOutputReader(RawDataFileReader, DataCacheObject):
+    def __init__(self, file_name):
+        self.filename = file_name
+
+    def get_content(self):
+        tmp = []
+        for line in self.grep_iterator(r"^\[.*latency$"):
+            line = line.split()
+            ops = int(line[9])
+            latency = float(line[16])
+            tmp.append({"ops": ops, "latency": latency})
+        return pd.DataFrame(tmp)
+
+    @property
+    def latency(self):
+        return self.data["latency"]
+
+    @property
+    def ops(self):
+        return self.data["ops"]

@@ -156,6 +156,8 @@ class LinuxColumnStyleOutputReader(RawDataFileReader, DataCacheObject):
         if column_name_list is not None:
             self.header = column_name_list
 
+    dtype = float
+
     def get_content(self):
         """
         Read data file and build up a pandas data frame
@@ -165,7 +167,7 @@ class LinuxColumnStyleOutputReader(RawDataFileReader, DataCacheObject):
         data = []
         for row in self.grep_iterator(self.data_row_regex):
             data.append(self.data_formatter(row))
-        df = pd.DataFrame(data, columns=self.header, dtype=float)
+        df = pd.DataFrame(data, columns=self.header, dtype=self.dtype)
 
         return df
 

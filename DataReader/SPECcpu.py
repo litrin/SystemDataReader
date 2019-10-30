@@ -19,7 +19,6 @@ class BaseSPECcpuScore(RawDataFileReader):
         component = component.lower()
         # full component format
         regex = r"^\d{3}\.%s+.?(\s+\d+){3}" % component
-
         for score_content in self.grep_iterator(regex):
             break
         self.score_row = list(
