@@ -1,10 +1,11 @@
 import os
 from abc import ABCMeta
 from .base import DataReaderError
+import xml.etree.cElementTree as ET
 
 import pandas as pd
 
-__all__ = ["EMONSummaryData", "EMONDetailData"]
+__all__ = ["EMONSummaryData", "EMONDetailData", "EMONMetricFormulaReader"]
 
 # here is the version number from EDP
 __ver__ = "3.9"
@@ -258,3 +259,67 @@ class TopDownAnalyzer(object):
                 }
 
         return self.filtering(keys)
+
+
+class EMONMetricFormula:
+    Body = None
+
+    def __init__(self, metric):
+        self.Body = metric
+
+    @property
+    def name(self):
+        return self.Body.attrib["name"]
+
+    @property
+    def formula(self):
+        for element in self.Body:
+            if element.tag == "formula":
+                return element.text
+
+    def get_required_event(self):
+        event = []
+        for element in self.Body:
+            if element.tag == "event":
+                event.append(element.text)
+        return event
+
+    def get_required_constant(self):
+        event = []
+        for element in self.Body:
+            if element.tag == "constant":
+                event.append(element.text)
+        return event
+
+    def get_formula_body(self):
+
+        convert = {}
+        for element in self.Body:
+            if element.tag in ("constant", "event"):
+                convert[element.attrib['alias']] = element.text
+            else:
+                continue
+
+        formula = self.formula
+        for char in convert.keys():
+            formula = formula.replace(char, "{{%s}}" % char)
+
+        for char in convert.keys():
+            formula = formula.replace("{{%s}}" % char, convert[char])
+
+        return formula
+
+    def __str__(self):
+        return "%s = %s" % (self.name, self.get_formula_body())
+
+
+class EMONMetricFormulaReader:
+    filename = None
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def __iter__(self):
+        file_content = ET.ElementTree(file=self.filename)
+        for metric in file_content.getroot():
+            yield EMONMetricFormula(metric)
