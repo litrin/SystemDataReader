@@ -1,7 +1,8 @@
 import json
 
-from .base import RawDataFileReader, DataReaderError, DataCacheObject
 import pandas as pd
+
+from .base import RawDataFileReader, DataReaderError, DataCacheObject
 
 
 class RedisBenchmarkData(RawDataFileReader):
@@ -87,6 +88,18 @@ class MemtierJsonReader:
     def total(self):
         return self.body["ALL STATS"]["Totals"]
 
+    @property
+    def latency(self):
+        return self.total["Latency"]
+
+    @property
+    def ops(self):
+        return self.total["Ops/sec"]
+
+    @property
+    def qps(self):
+        return self.total["Ops/sec"]
+
 
 class MemtierOutputReader(RawDataFileReader, DataCacheObject):
     def __init__(self, file_name):
@@ -107,4 +120,8 @@ class MemtierOutputReader(RawDataFileReader, DataCacheObject):
 
     @property
     def ops(self):
+        return self.data["ops"]
+
+    @property
+    def qps(self):
         return self.data["ops"]
