@@ -68,7 +68,11 @@ class EMONCSVReader(object):
         data = pd.read_csv(abs_filename, index_col=0, low_memory=False,
                            na_filter=False)
 
+        #
+        # todo: latest pandas removed mothod dataframe.convert_objects() should replaced by pandas.to_numberic()
+        #
         data = data.convert_objects(convert_numeric=True)
+        
 
         return data
 
