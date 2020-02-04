@@ -1,8 +1,9 @@
 import os
 from abc import ABCMeta
-from .base import DataReaderError
 
 import pandas as pd
+
+from .base import DataReaderError
 
 __all__ = ["EMONSummaryData", "EMONDetailData"]
 
@@ -66,13 +67,9 @@ class EMONCSVReader(object):
     @staticmethod
     def read_csv(abs_filename):
         data = pd.read_csv(abs_filename, index_col=0, low_memory=False,
-                           na_filter=False)
-
-        #
-        # todo: latest pandas removed mothod dataframe.convert_objects() should replaced by pandas.to_numberic()
-        #
-        data = data.convert_objects(convert_numeric=True)
-        
+                           na_filter=False, engine="c")
+        for col in data.columns:
+            data[col] = pd.to_numeric(data[col], errors="coerce")
 
         return data
 
