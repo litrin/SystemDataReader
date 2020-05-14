@@ -1,5 +1,3 @@
-from matplotlib import pyplot as plt
-
 from DataReader.Emon import EMONSummaryData, TopDownAnalyzer
 import matplotlib.pyplot as plt
 
@@ -59,18 +57,49 @@ class TimeSerialPlot(BaseVisualization):
             ax.set_title(ts_data)
 
 
-class TMAMPlot(TopDownAnalyzer, BaseVisualization):
+class BaseTMAMPlot(TopDownAnalyzer, BaseVisualization):
+    map = {}
 
-    def port_utilization(self):
-        keys = {
-            "metric_TMAM_....Ports_Utilization(%)": "All",
-            "metric_TMAM_....Divider(%)": "Devider",
-            "metric_TMAM_......0_Ports_Utilized(%)": "Port 0",
-            "metric_TMAM_......1_Port_Utilized(%)": "Port 1",
-            "metric_TMAM_......2_Ports_Utilized(%)": "Port 2",
-            "metric_TMAM_......3m_Ports_Utilized(%)": "Port 3m"
-        }
-        data = self.filter(keys)
+    def summary(self):
+        data = self.filter(self.map["summary"])
+        data = data.sort_values()
+
+        ax = self.get_ax()
+        ax.set_title("Top-down breakdown (top)")
+
+        data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                      startangle=90,
+                      # explode=(0, 0, 0, 0.1)
+                      )
+
+        ax.set_ylabel("")
+
+    def backend_bound(self):
+        data = self.filter(self.map["backend"])
+
+        data = data.sort_values()
+        ax = self.get_ax()
+        ax.set_title("Backend breakdown")
+
+        data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                      startangle=90, )
+
+        ax.set_ylabel("")
+
+    def cache_hierarchy(self):
+        data = self.filter(self.map["memory"])
+        ax = self.get_ax()
+
+        ax.set_title("Cache Hierarchy")
+
+        data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                      startangle=90,
+                      # explode=(0, 0, 0, 0.1)
+                      )
+        ax.set_ylabel("")
+
+    def ports(self):
+        data = self.filter(self.map["ports"])
 
         ax = self.get_ax()
         ax.set_title("Port utilizations(%)")
@@ -81,58 +110,36 @@ class TMAMPlot(TopDownAnalyzer, BaseVisualization):
         ax.set_xlabel("")
         ax.set_ylabel("%")
 
-    def summary(self):
-        keys = {"metric_TMAM_Frontend_Bound(%)": "Frontend Bound",
-                "metric_TMAM_Backend_bound(%)": "Backend Bound",
-                "metric_TMAM_Bad_Speculation(%)": "Bad Speculation",
-                "metric_TMAM_Retiring(%)": "Retiring",
-                # "metric_TMAM_..Memory_Bound(%)": "Memory Bound(Backend)",
-                # "metric_TMAM_..Core_Bound(%)": "Core Bound(Backend)"
-                }
-        data = self.filter(keys)
-        data = data.sort_values()
 
-        ax = self.get_ax()
-        ax.set_title("Top-down break down (top)")
+class TMAMPlotSKX(BaseTMAMPlot):
+    EDP_VERSION = "edp3.9skx_clx"
 
-        data.plot.pie(ax=ax, autopct='%1.1f%%', shadow=True,
-                      startangle=90,
-                      explode=(0, 0, 0, 0.1))
-
-        ax.set_ylabel("")
-
-    def backend_bound(self):
-        keys = {
+    map = {
+        "summary": {"metric_TMAM_Frontend_Bound(%)": "Frontend Bound",
+                    "metric_TMAM_Backend_bound(%)": "Backend Bound",
+                    "metric_TMAM_Bad_Speculation(%)": "Bad Speculation",
+                    "metric_TMAM_Retiring(%)": "Retiring",
+                    },
+        "backend": {
             "metric_TMAM_..Memory_Bound(%)": "Memory Bound",
-            "metric_TMAM_..Core_Bound(%)": "Core Bound"}
-
-        data = self.filter(keys)
-
-        data = data.sort_values()
-        ax = self.get_ax()
-        ax.set_title("Backend break down")
-
-        data.plot.pie(ax=ax, autopct='%1.1f%%', shadow=True,
-                      startangle=90, )
-
-        ax.set_ylabel("")
-
-    def cache_hierarchy(self):
-        keys = {
+            "metric_TMAM_..Core_Bound(%)": "Core Bound"
+        },
+        "memory": {
             "metric_TMAM_....L1_Bound(%)": "L1 Bound",
             "metric_TMAM_....L2_Bound(%)": "L2 Bound",
             "metric_TMAM_....L3_Bound(%)": "L3 Bound",
             "metric_TMAM_....MEM_Bound(%)": "DRAM Bound",
+        },
+        "ports": {
+            "metric_TMAM_....Ports_Utilization(%)": "All",
+            "metric_TMAM_....Divider(%)": "Devider",
+            "metric_TMAM_......0_Ports_Utilized(%)": "Port 0",
+            "metric_TMAM_......1_Port_Utilized(%)": "Port 1",
+            "metric_TMAM_......2_Ports_Utilized(%)": "Port 2",
+            "metric_TMAM_......3m_Ports_Utilized(%)": "Port 3m"
         }
 
-        data = self.filter(keys)
-        ax = self.get_ax()
-        ax.set_title("Cache Hierarchy")
-
-        data.plot.pie(ax=ax, autopct='%1.1f%%', shadow=True,
-                      startangle=90,
-                      explode=(0, 0, 0, 0.1))
-        ax.set_ylabel("")
+    }
 
     @staticmethod
     def plot_all(path, image_name=None):
@@ -142,12 +149,63 @@ class TMAMPlot(TopDownAnalyzer, BaseVisualization):
         emon = EMONSummaryData(path)
         emon = emon.system_view
 
-        tman_ploter = TMAMPlot(emon.aggregated)
+        tman_ploter = TMAMPlotSKX(emon.aggregated)
         tman_ploter.set_fig(2, 2, image_name)
 
         tman_ploter.summary()
         tman_ploter.cache_hierarchy()
         tman_ploter.backend_bound()
-        tman_ploter.port_utilization()
+        tman_ploter.ports()
+
+        tman_ploter.close()
+
+
+class TMAMPlotICX(BaseTMAMPlot):
+
+    EDP_VERSION = "edp3.94icx"
+    prefix = "metric_TMA"
+    map = {
+        "summary": {"metric_TMA_Frontend_Bound(%)": "Frontend Bound",
+                    "metric_TMA_Backend_bound(%)": "Backend Bound",
+                    "metric_TMA_Bad_Speculation(%)": "Bad Speculation",
+                    "metric_TMA_Retiring(%)": "Retiring",
+                    },
+        "backend": {
+            "metric_TMA..Memory_Bound(%)": "Memory Bound",
+            "metric_TMA..Core_Bound(%)": "Core Bound"
+        },
+        "memory": {
+            "metric_TMA....L1_Bound(%)": "L1 Bound",
+            "metric_TMA_....L2_Bound(%)": "L2 Bound",
+            "metric_TMA_....L3_Bound(%)": "L3 Bound",
+            "metric_TMA....DRAM_Bound(%)": "DRAM Bound",
+        },
+
+        "ports": {
+            "metric_TMA....Ports_Utilization(%)": "All",
+            "metric_TMA....Divider(%)": "Devider",
+            'metric_TMA......0_Ports_Utilization(%)': "Port 0",
+            "metric_TMA......1_Port_Utilized(%)": "Port 1",
+            "metric_TMA......2_Ports_Utilized(%)": "Port 2",
+            "metric_TMA......3m_Ports_Utilized(%)": "Port 3m"
+        }
+
+    }
+
+    @staticmethod
+    def plot_all(path, image_name=None):
+        if image_name is None:
+            image_name = "%s.png" % path
+
+        emon = EMONSummaryData(path)
+        emon = emon.system_view
+
+        tman_ploter = TMAMPlotICX(emon.aggregated, "metric_TMA")
+        tman_ploter.set_fig(2, 2, image_name)
+
+        tman_ploter.summary()
+        tman_ploter.cache_hierarchy()
+        tman_ploter.backend_bound()
+        tman_ploter.ports()
 
         tman_ploter.close()

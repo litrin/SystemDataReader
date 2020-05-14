@@ -130,20 +130,27 @@ class EMONDetailData(EMONCSVReader):
 class TopDownAnalyzer(object):
     data = None
 
-    def __init__(self, dataframe):
-        self.data = dataframe
+    def __init__(self, dataframe, prefix=None):
+        name_map = {k: k.lower() for k in dataframe.index}
+        self.data = dataframe.rename(name_map, axis="index")
 
-        keys = filter(lambda a: a.startswith("metric_TMAM"), dataframe.index)
+        if prefix is None:
+            prefix = "metric_tmam"
+        else:
+            prefix = prefix.lower()
+
+        keys = filter(lambda a: a.startswith(prefix), self.data.index)
         # convert values to percentage
         self.data = self.filter(keys)
 
     def filter(self, index_list):
         if isinstance(index_list, dict):
+            index_list = {k.lower(): v for k, v in index_list.items()}
             data = self.data[self.data.index.isin(index_list.keys())]
             data = data.rename(index_list, axis='index')
         else:
-             data = self.data[self.data.index.isin(index_list)]
-
+            index_list = [i.lower() for i in index_list]
+            data = self.data[self.data.index.isin(index_list)]
         return data
 
     @property
