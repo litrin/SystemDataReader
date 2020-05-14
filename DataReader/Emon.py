@@ -134,18 +134,15 @@ class TopDownAnalyzer(object):
         self.data = dataframe
 
         keys = filter(lambda a: a.startswith("metric_TMAM"), dataframe.index)
-
         # convert values to percentage
-        self.data = self.filtering(keys) / 100
+        self.data = self.filter(keys)
 
-    def filtering(self, index_list):
-        data = None
-        if isinstance(index_list, list):
-            data = self.data[self.data.index.isin(index_list)]
-
+    def filter(self, index_list):
         if isinstance(index_list, dict):
             data = self.data[self.data.index.isin(index_list.keys())]
             data = data.rename(index_list, axis='index')
+        else:
+             data = self.data[self.data.index.isin(index_list)]
 
         return data
 
@@ -154,7 +151,7 @@ class TopDownAnalyzer(object):
         keys = {
             "metric_TMAM_Info_CoreIPC": "ipc"
         }
-        return self.filtering(keys) * 100
+        return self.filter(keys) * 100
 
     @property
     def memory_level_parallelism(self):
@@ -162,7 +159,7 @@ class TopDownAnalyzer(object):
             "metric_TMAM_Info_Memory Level Parallelism":
                 "Memory Level Parallelism"
         }
-        return self.filtering(keys) * 100
+        return self.filter(keys) * 100
 
     @property
     def tread_active(self):
@@ -170,7 +167,7 @@ class TopDownAnalyzer(object):
             "metric_TMAM_Info_cycles_both_threads_active(%)":
                 "Threads Active rate"
         }
-        return self.filtering(keys)
+        return self.filter(keys)
 
     @property
     def top_level(self):
@@ -179,7 +176,7 @@ class TopDownAnalyzer(object):
                 "metric_TMAM_Bad_Speculation(%)": "Bad Speculation",
                 "metric_TMAM_Retiring(%)": "Retiring"}
 
-        result = self.filtering(keys)
+        result = self.filter(keys)
         return result
 
     @property
@@ -187,7 +184,7 @@ class TopDownAnalyzer(object):
         keys = {"metric_TMAM_Backend_bound(%)": "Backend Bound Total",
                 "metric_TMAM_..Memory_Bound(%)": "Memory Bound",
                 "metric_TMAM_..Core_Bound(%)": "Core Bound"}
-        return self.filtering(keys)
+        return self.filter(keys)
 
     @property
     def backend_core(self):
@@ -200,31 +197,31 @@ class TopDownAnalyzer(object):
                 "metric_TMAM_......3m_Ports_Utilized(%)": "Port 3m utilization"
                 }
 
-        return self.filtering(keys)
+        return self.filter(keys)
 
     @property
     def backend_memory(self):
         keys = {
             "metric_TMAM_..Memory_Bound(%)": "Backend Memory Bound Total",
-            "metric_TMAM_....L1_Bound(%)": "L1",
+            "metric_TMAM_....L1_Bound(%)": "L1 Bound",
             "metric_TMAM_......DTLB_Load(%)": "L1 DTLB Load",
             "metric_TMAM_......Store_Fwd_Blk(%)": "L1 Store forward block",
             "metric_TMAM_......Lock_Latency(%)": "L1 Lock Latency",
-            "metric_TMAM_....L2_Bound(%)": "L2",
-            "metric_TMAM_....L3_Bound(%)": "L3",
+            "metric_TMAM_....L2_Bound(%)": "L2 Bound",
+            "metric_TMAM_....L3_Bound(%)": "L3 Bound",
             "metric_TMAM_......Contested_Accesses(%)": "L3 Contested Accesses",
             "metric_TMAM_......Data_Sharing(%)": "L3 Data Sharing",
             "metric_TMAM_......L3_Latency(%)": "L3 Latency",
             "metric_TMAM_......L3_Bandwidth(%)": "L3 Bandwidth",
             "metric_TMAM_......SQ_Full(%)": "L3 SQ Full",
-            "metric_TMAM_....MEM_Bound(%)": "Ext. Memory Bound",
+            "metric_TMAM_....MEM_Bound(%)": "DRAM Bound",
             "metric_TMAM_......MEM_Bandwidth(%)": "Ext. Memory Bandwidth",
             "metric_TMAM_......MEM_Latency(%)": "Ext. Memory Latency",
             "metric_TMAM_....Stores_Bound(%)": "Stores Bound",
             "metric_TMAM_......DTLB_Store(%)": "Stores DTLB",
         }
 
-        return self.filtering(keys)
+        return self.filter(keys)
 
     @property
     def bad_speculaction(self):
@@ -233,7 +230,7 @@ class TopDownAnalyzer(object):
                 "metric_TMAM_..Machine_Clears(%)": "Machine clears",
                 }
 
-        return self.filtering(keys)
+        return self.filter(keys)
 
     @property
     def frontend(self):
@@ -247,7 +244,7 @@ class TopDownAnalyzer(object):
                 "metric_TMAM_..Frontend_Bandwidth(%)": "Frontend Bandwidth",
                 }
 
-        return self.filtering(keys)
+        return self.filter(keys)
 
     @property
     def retiring(self):
@@ -258,7 +255,7 @@ class TopDownAnalyzer(object):
                 "metric_TMAM_..Microcode_Sequencer(%)": "Microcode Sequencer",
                 }
 
-        return self.filtering(keys)
+        return self.filter(keys)
 
 
 class EMONMetricFormula:
