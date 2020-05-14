@@ -113,7 +113,6 @@ class BaseTMAMPlot(TopDownAnalyzer, BaseVisualization):
 
 class TMAMPlotSKX(BaseTMAMPlot):
     EDP_VERSION = "edp3.9skx_clx"
-
     map = {
         "summary": {"metric_TMAM_Frontend_Bound(%)": "Frontend Bound",
                     "metric_TMAM_Backend_bound(%)": "Backend Bound",
@@ -161,7 +160,6 @@ class TMAMPlotSKX(BaseTMAMPlot):
 
 
 class TMAMPlotICX(BaseTMAMPlot):
-
     EDP_VERSION = "edp3.94icx"
     prefix = "metric_TMA"
     map = {
@@ -176,8 +174,8 @@ class TMAMPlotICX(BaseTMAMPlot):
         },
         "memory": {
             "metric_TMA....L1_Bound(%)": "L1 Bound",
-            "metric_TMA_....L2_Bound(%)": "L2 Bound",
-            "metric_TMA_....L3_Bound(%)": "L3 Bound",
+            "metric_TMA....L2_Bound(%)": "L2 Bound",
+            "metric_TMA....L3_Bound(%)": "L3 Bound",
             "metric_TMA....DRAM_Bound(%)": "DRAM Bound",
         },
 
