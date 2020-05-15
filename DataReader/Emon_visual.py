@@ -1,4 +1,4 @@
-from DataReader.Emon import EMONSummaryData, TopDownAnalyzer
+from DataReader.Emon import EMONSummaryData, TopDownHelper
 import matplotlib.pyplot as plt
 
 
@@ -57,7 +57,7 @@ class TimeSerialPlot(BaseVisualization):
             ax.set_title(ts_data)
 
 
-class BaseTMAMPlot(TopDownAnalyzer, BaseVisualization):
+class BaseTMAMPlot(TopDownHelper, BaseVisualization):
     map = {}
 
     def summary(self):

@@ -5,7 +5,8 @@ import xml.etree.cElementTree as ET
 
 import pandas as pd
 
-__all__ = ["EMONSummaryData", "EMONDetailData", "EMONMetricFormulaReader"]
+__all__ = ["EMONSummaryData", "EMONDetailData", "EMONMetricFormulaReader",
+           "TopDownHelper"]
 
 # here is the version number from EDP
 __ver__ = "3.9"
@@ -127,23 +128,31 @@ class EMONDetailData(EMONCSVReader):
         return self.get_file_content(self.CORE)
 
 
-class TopDownAnalyzer(object):
+class TopDownHelper(object):
     data = None
 
-    def __init__(self, dataframe, prefix=None):
+    def __init__(self, dataframe, prefix="metric_tmam"):
+        """
+        :param dataframe: EMONSummaryView df
+        :param prefix: str define TMAM metrics's prefix or name convention
+        """
+        # mix cases
+        prefix = prefix.lower()
+
         name_map = {k: k.lower() for k in dataframe.index}
         self.data = dataframe.rename(name_map, axis="index")
 
-        if prefix is None:
-            prefix = "metric_tmam"
-        else:
-            prefix = prefix.lower()
-
+        # filter out top-down related metrics
         keys = filter(lambda a: a.startswith(prefix), self.data.index)
-        # convert values to percentage
         self.data = self.filter(keys)
 
     def filter(self, index_list):
+        """
+        Filter metrics from list
+
+        :param index_list: dict | list, when use dict, filter out + rename
+        :return: df
+        """
         if isinstance(index_list, dict):
             index_list = {k.lower(): v for k, v in index_list.items()}
             data = self.data[self.data.index.isin(index_list.keys())]
@@ -151,118 +160,34 @@ class TopDownAnalyzer(object):
         else:
             index_list = [i.lower() for i in index_list]
             data = self.data[self.data.index.isin(index_list)]
+
         return data
 
-    @property
-    def ipc(self):
-        keys = {
-            "metric_TMAM_Info_CoreIPC": "ipc"
-        }
-        return self.filter(keys) * 100
+    def get_child(self, metric_name, name_to_level=lambda a: a.count(".")):
+        """
+        get all childs from parent name
 
-    @property
-    def memory_level_parallelism(self):
-        keys = {
-            "metric_TMAM_Info_Memory Level Parallelism":
-                "Memory Level Parallelism"
-        }
-        return self.filter(keys) * 100
+        :param metric_name: str, parent name
+        :param name_to_level: executable, function what may convert to level
+        :return: df
+        """
+        metric_name = metric_name.lower()
 
-    @property
-    def tread_active(self):
-        keys = {
-            "metric_TMAM_Info_cycles_both_threads_active(%)":
-                "Threads Active rate"
-        }
-        return self.filter(keys)
+        start, end, level = -1, -1, -1
+        for offset, value in enumerate(self.data.index):
+            if value == metric_name:
+                start = offset + 1
+                level = name_to_level(value)
+                continue
 
-    @property
-    def top_level(self):
-        keys = {"metric_TMAM_Frontend_Bound(%)": "Frontend Bound",
-                "metric_TMAM_Backend_bound(%)": "Backend Bound",
-                "metric_TMAM_Bad_Speculation(%)": "Bad Speculation",
-                "metric_TMAM_Retiring(%)": "Retiring"}
+            if start != -1 and level == name_to_level(value):
+                end = offset - 1
+                break
 
-        result = self.filter(keys)
-        return result
+        if start == -1:
+            return None
 
-    @property
-    def backend(self):
-        keys = {"metric_TMAM_Backend_bound(%)": "Backend Bound Total",
-                "metric_TMAM_..Memory_Bound(%)": "Memory Bound",
-                "metric_TMAM_..Core_Bound(%)": "Core Bound"}
-        return self.filter(keys)
-
-    @property
-    def backend_core(self):
-        keys = {"metric_TMAM_..Core_Bound(%)": "Backend Core Bound Total",
-                "metric_TMAM_....Divider(%)": "iDevider",
-                "metric_TMAM_....Ports_Utilization(%)": "All port utilization",
-                "metric_TMAM_......0_Ports_Utilized(%)": "Port 0 utilization",
-                "metric_TMAM_......1_Port_Utilized(%)": "Port 1 utilization",
-                "metric_TMAM_......2_Ports_Utilized(%)": "Port 2 utilization",
-                "metric_TMAM_......3m_Ports_Utilized(%)": "Port 3m utilization"
-                }
-
-        return self.filter(keys)
-
-    @property
-    def backend_memory(self):
-        keys = {
-            "metric_TMAM_..Memory_Bound(%)": "Backend Memory Bound Total",
-            "metric_TMAM_....L1_Bound(%)": "L1 Bound",
-            "metric_TMAM_......DTLB_Load(%)": "L1 DTLB Load",
-            "metric_TMAM_......Store_Fwd_Blk(%)": "L1 Store forward block",
-            "metric_TMAM_......Lock_Latency(%)": "L1 Lock Latency",
-            "metric_TMAM_....L2_Bound(%)": "L2 Bound",
-            "metric_TMAM_....L3_Bound(%)": "L3 Bound",
-            "metric_TMAM_......Contested_Accesses(%)": "L3 Contested Accesses",
-            "metric_TMAM_......Data_Sharing(%)": "L3 Data Sharing",
-            "metric_TMAM_......L3_Latency(%)": "L3 Latency",
-            "metric_TMAM_......L3_Bandwidth(%)": "L3 Bandwidth",
-            "metric_TMAM_......SQ_Full(%)": "L3 SQ Full",
-            "metric_TMAM_....MEM_Bound(%)": "DRAM Bound",
-            "metric_TMAM_......MEM_Bandwidth(%)": "Ext. Memory Bandwidth",
-            "metric_TMAM_......MEM_Latency(%)": "Ext. Memory Latency",
-            "metric_TMAM_....Stores_Bound(%)": "Stores Bound",
-            "metric_TMAM_......DTLB_Store(%)": "Stores DTLB",
-        }
-
-        return self.filter(keys)
-
-    @property
-    def bad_speculaction(self):
-        keys = {"metric_TMAM_Bad_Speculation(%)": "Bad Speculation Total",
-                "metric_TMAM_..Branch_Mispredicts(%)": "Branch Mis-predicts",
-                "metric_TMAM_..Machine_Clears(%)": "Machine clears",
-                }
-
-        return self.filter(keys)
-
-    @property
-    def frontend(self):
-        keys = {"metric_TMAM_Frontend_Bound(%)": "Frontend Bound Total",
-                "metric_TMAM_..Frontend_Latency(%)": "Frontend Latency",
-                "metric_TMAM_....ICache_Misses(%)": "Latency iCache Misses",
-                "metric_TMAM_....ITLB_Misses(%)": "Latency ITLB Misses",
-                "metric_TMAM_....Branch_Resteers(%)": "Latency Branch Resteers",
-                "metric_TMAM_....DSB_Switches(%)": "Latency DSB Switches",
-                "metric_TMAM_....MS_Switches(%)": "Latency MS Switches",
-                "metric_TMAM_..Frontend_Bandwidth(%)": "Frontend Bandwidth",
-                }
-
-        return self.filter(keys)
-
-    @property
-    def retiring(self):
-        keys = {"metric_TMAM_Retiring(%)": "Retiring Total",
-                "metric_TMAM_..Base(%)": "Retiring Base",
-                "metric_TMAM_....FP_Arith(%)": "Base FP Arith.",
-                "metric_TMAM_....Other(%)": "Base Other",
-                "metric_TMAM_..Microcode_Sequencer(%)": "Microcode Sequencer",
-                }
-
-        return self.filter(keys)
+        return self.data[start:end]
 
 
 class EMONMetricFormula:
@@ -327,3 +252,7 @@ class EMONMetricFormulaReader:
         file_content = ET.ElementTree(file=self.filename)
         for metric in file_content.getroot():
             yield EMONMetricFormula(metric)
+
+
+EDPFormulas = EMONMetricFormulaReader
+EDPFormula = EMONMetricFormula
