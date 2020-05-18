@@ -165,3 +165,30 @@ class TopDownAnalyzerHelper(object):
         data = self.data[self.data.index.isin(selector)]
 
         return data
+
+    def get_child(self, metric_name, name_to_level=lambda a: a.count(".")):
+        """
+        get all childs from parent name
+
+        :param metric_name: str, parent name
+        :param name_to_level: executable, function what may convert to level
+        :return: df
+        """
+        metric_name = metric_name.lower()
+
+        start, end, level = -1, -1, -1
+        for offset, value in enumerate(self.data.index):
+            if value == metric_name:
+                start = offset + 1
+                level = name_to_level(value)
+                continue
+
+            if start != -1 and level == name_to_level(value):
+                end = offset - 1
+                break
+
+        if start == -1:
+            return None
+
+        return self.data[start:end]
+
