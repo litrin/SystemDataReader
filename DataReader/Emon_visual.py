@@ -1,5 +1,6 @@
 from DataReader.Emon import EMONSummaryData, TopDownHelper
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 class BaseVisualization:
@@ -31,6 +32,13 @@ class BaseVisualization:
             plt.savefig(self.filename, dpi=300, transparent=True,
                         pad_inches=0)
 
+        plt.close()
+
+    def save_pdf(self, filename):
+        with PdfPages(filename) as pdf:
+            pdf.savefig()
+        plt.close()
+
 
 class TimeSerialPlot(BaseVisualization):
     length = 0
@@ -52,9 +60,26 @@ class TimeSerialPlot(BaseVisualization):
 
         for ts_data in self.data.columns.values:
             ax = self.get_ax()
-            self.data[ts_data].plot(ax=ax)
-            ax.set_xlabel("ts")
-            ax.set_title(ts_data)
+            self.get_chart(ax, ts_data)
+
+    def get_chart(self, ax, ts_data):
+        tmp = self.data[ts_data]
+
+        tmp = tmp.fillna(method='ffill')
+        tmp.plot(ax=ax, fontsize=6)
+
+        ax.set_xlabel("ts")
+        ax.set_title(ts_data)
+
+    def save_pdf(self, filename):
+        with PdfPages(filename) as pdf:
+            for ts_data in self.data.columns.values:
+                fig = plt.figure()
+                ax = fig.add_subplot(1, 1, 1)
+                self.get_chart(ax, ts_data)
+                pdf.savefig()
+
+                plt.close()
 
 
 class BaseTMAMPlot(TopDownHelper, BaseVisualization):
@@ -68,7 +93,7 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
         ax.set_title("Top-down breakdown (top)")
 
         data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                      startangle=90,
+                      startangle=90, fontsize=6,
                       # explode=(0, 0, 0, 0.1)
                       )
 
@@ -82,7 +107,7 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
         ax.set_title("Backend breakdown")
 
         data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                      startangle=90, )
+                      startangle=90, fontsize=6, )
 
         ax.set_ylabel("")
 
@@ -93,7 +118,7 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
         ax.set_title("Cache Hierarchy")
 
         data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                      startangle=90,
+                      startangle=90, fontsize=6,
                       # explode=(0, 0, 0, 0.1)
                       )
         ax.set_ylabel("")
@@ -103,7 +128,7 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
 
         ax = self.get_ax()
         ax.set_title("Port utilizations(%)")
-        data.plot.bar(ax=ax)
+        data.plot.bar(ax=ax, fontsize=6, )
 
         ax.grid(True)
         ax.set_ylim(0, 100)
