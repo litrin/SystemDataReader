@@ -64,8 +64,6 @@ class TimeSerialPlot(BaseVisualization):
 
     def get_chart(self, ax, ts_data):
         tmp = self.data[ts_data]
-
-        tmp = tmp.fillna(method='ffill')
         tmp.plot(ax=ax, fontsize=6)
 
         ax.set_xlabel("ts")

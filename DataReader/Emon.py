@@ -69,16 +69,21 @@ class EMONReader(object):
             sheet_name = self._excel_sheet_name_format % view
             df = self.read_excel(self.excel_file_name, sheet_name)
 
-        if self.metric_list is not None:
-            df = df[df.index.isin(self.metric_list)]
+        return self.filter(df)
 
-        return df
+    def select_metric(self, metric):
+        self.metric_list.append(metric)
+
+    def filter(self, data_frame):
+        return data_frame
 
     @staticmethod
     def read_csv(abs_filename):
         data = pd.read_csv(abs_filename, index_col=0, low_memory=False,
                            na_filter=False, engine="c")
         for col in data.columns:
+            if col == "timestamp":
+                continue
             data[col] = pd.to_numeric(data[col], errors="coerce")
 
         return data
@@ -88,6 +93,8 @@ class EMONReader(object):
         data = pd.read_excel(abs_filename, sheet_name=sheet_name,
                              index_col=0, na_filter=False)
         for col in data.columns:
+            if col == "timestamp":
+                continue
             data[col] = pd.to_numeric(data[col], errors="coerce")
 
         return data
@@ -160,19 +167,31 @@ class EMONSummaryData(EMONReader):
     _csv_file_filename_format = "__edp_%s_view_summary.csv"
     _excel_sheet_name_format = "%s view"
 
+    def filter(self, data_frame):
+        if self.metric_list is not None:
+            data_frame = data_frame.loc[self.metric_list]
+        return data_frame
+
 
 class EMONDetailData(EMONReader):
     _csv_file_filename_format = "__edp_%s_view_details.csv"
     _excel_sheet_name_format = "details %s view"
 
     convert_ts = False
+    fill_empty_entries = "ffill"
 
-    def get_file_content(self, view=EMONReader.SYSTEM):
-        data = super(EMONDetailData, self).get_file_content(view)
+    def filter(self, data_frame):
         if self.convert_ts:
-            data["timestamp"] = pd.to_datetime(pd.Series(data["timestamp"]))
+            data_frame["timestamp"] = pd.to_datetime(
+                pd.Series(data_frame["timestamp"]))
 
-        return data
+        if self.metric_list is not None:
+            data_frame = data_frame[self.metric_list]
+
+        if self.fill_empty_entries:
+            data_frame = data_frame.fillna(method=self.fill_empty_entries)
+
+        return data_frame
 
 
 class TopDownHelper(object):
