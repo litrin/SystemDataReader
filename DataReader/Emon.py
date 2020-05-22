@@ -1,9 +1,10 @@
 import os
-from abc import ABCMeta
-from .base import DataReaderError
 import xml.etree.cElementTree as ET
+from abc import ABCMeta
 
 import pandas as pd
+
+from .base import DataReaderError
 
 __all__ = ["EMONSummaryData", "EMONDetailData", "EMONMetricFormulaReader",
            "TopDownHelper"]
@@ -20,7 +21,7 @@ class EMONDataError(DataReaderError):
     pass
 
 
-class EMONCSVReader(object):
+class EMONReader(object):
     """
     Base Emon/edp csv data reader
     """
@@ -29,41 +30,49 @@ class EMONCSVReader(object):
     SYSTEM = "system"
     CORE = "core"
     SOCKET = "socket"
-    # THREAD = "thread"
+    THREAD = "thread"
 
     archived_file = "emon_data.zip"
 
-    path = "."
+    csv_files_path = None
+    _csv_file_filename_format = "%s.csv"
 
-    _filename_format = "%s.csv"
+    excel_file_name = None
+    _excel_sheet_name_format = "%s %s"
+
     metric_list = None
 
     def __init__(self, path):
         """
-        :param path: folder which contains emon/edp csv files
+        :param path: folder which contains emon/edp csv files or excel file
         """
-        self.path = path
+        if not os.path.exists(path):
+            raise EMONReaderError("Path is not exist: %s" % path)
+
+        if os.path.isdir(path):
+            self.csv_files_path = path
+        else:
+            self.excel_file_name = path
 
     def get_file_content(self, view, check_processing_state=False):
-        filename = self._filename_format % view
+        if self.csv_files_path is not None:
+            filename = self._csv_file_filename_format % view
+            abs_filename = os.path.join(self.csv_files_path, filename)
 
-        abs_filename = os.path.join(self.path, filename)
-        if not os.path.exists(abs_filename):
-            raise EMONReaderError("file not exist: %s" % abs_filename)
+            if not os.path.exists(abs_filename):
+                raise EMONReaderError(
+                    "View file is not exist: %s" % abs_filename)
 
-        if check_processing_state and not os.path.exists(
-                os.path.join(self.path, "emon_data.zip")):
-            raise EMONDataError(
-                "Process does not finish at %s" % abs_filename)
+            df = self.read_csv(abs_filename)
 
-        df = self.read_csv(abs_filename)
+        if self.excel_file_name is not None:
+            sheet_name = self._excel_sheet_name_format % view
+            df = self.read_excel(self.excel_file_name, sheet_name)
+
         if self.metric_list is not None:
             df = df[df.index.isin(self.metric_list)]
 
         return df
-
-    def set_metric_list(self, metrics):
-        self.metric_list = metrics
 
     @staticmethod
     def read_csv(abs_filename):
@@ -74,21 +83,42 @@ class EMONCSVReader(object):
 
         return data
 
+    @staticmethod
+    def read_excel(abs_filename, sheet_name):
+        data = pd.read_excel(abs_filename, sheet_name=sheet_name,
+                             index_col=0, na_filter=False)
+        for col in data.columns:
+            data[col] = pd.to_numeric(data[col], errors="coerce")
+
+        return data
+
     @property
     def raw_data_file(self):
-        filename = os.path.join(self.path, self.archived_file)
-        if os.path.exists(filename):
-            return filename
+        if self.csv_files_path is not None:
+            filename = os.path.join(self.csv_files_path, self.archived_file)
+        elif self.excel_file_name is not None:
+            filename = self.excel_file_name
         else:
             return None
 
+        if os.path.exists(filename):
+            return filename
+        return None
+
     @property
     def create_time(self):
-        return os.path.getctime(self.path)
+        if self.csv_files_path is not None:
+            path = self.csv_files_path
+        elif self.excel_file_name is not None:
+            path = self.excel_file_name
+        else:
+            return None
 
+        return os.path.getctime(path)
 
-class EMONSummaryData(EMONCSVReader):
-    _filename_format = "__edp_%s_view_summary.csv"
+    @property
+    def socket_view(self):
+        return self.get_file_content(self.SOCKET)
 
     @property
     def system_view(self):
@@ -99,33 +129,50 @@ class EMONSummaryData(EMONCSVReader):
         return self.get_file_content(self.CORE)
 
     @property
-    def socket_view(self):
-        return self.get_file_content(self.SOCKET)
+    def thread_view(self):
+        return self.get_file_content(self.THREAD)
 
 
-class EMONDetailData(EMONCSVReader):
-    _filename_format = "__edp_%s_view_details.csv"
+class EMONCSVReader(EMONReader):
+
+    def __init__(self, path):
+        """
+        :param path: folder which contains emon/edp csv files
+        """
+        if not os.path.exists(path):
+            raise EMONReaderError("CSV files are not exist at: %s" % path)
+        self.csv_files_path = path
+
+
+class EMONExcelFileReader(EMONReader):
+
+    def __init__(self, path):
+        """
+        :param path: folder which contains emon/edp excel file
+        """
+        if not os.path.exists(path):
+            raise EMONReaderError("Excel file %s is not exist!" % path)
+
+        self.excel_file_name = path
+
+
+class EMONSummaryData(EMONReader):
+    _csv_file_filename_format = "__edp_%s_view_summary.csv"
+    _excel_sheet_name_format = "%s view"
+
+
+class EMONDetailData(EMONReader):
+    _csv_file_filename_format = "__edp_%s_view_details.csv"
+    _excel_sheet_name_format = "details %s view"
 
     convert_ts = False
 
-    def get_file_content(self, view):
+    def get_file_content(self, view=EMONReader.SYSTEM):
         data = super(EMONDetailData, self).get_file_content(view)
         if self.convert_ts:
             data["timestamp"] = pd.to_datetime(pd.Series(data["timestamp"]))
 
         return data
-
-    @property
-    def system_view(self):
-        return self.get_file_content(self.SYSTEM)
-
-    @property
-    def socket_view(self):
-        return self.get_file_content(self.SOCKET)
-
-    @property
-    def core_view(self):
-        return self.get_file_content(self.CORE)
 
 
 class TopDownHelper(object):
