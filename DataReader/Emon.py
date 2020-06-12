@@ -79,8 +79,8 @@ class EMONReader(object):
 
     @staticmethod
     def read_csv(abs_filename):
-        data = pd.read_csv(abs_filename, index_col=0, low_memory=False,
-                           na_filter=False, engine="c")
+        data = pd.read_csv(abs_filename, index_col=0, verbose=True,
+                           na_filter=False, engine="python", sep=",")
         for col in data.columns:
             if col == "timestamp":
                 continue
@@ -91,7 +91,7 @@ class EMONReader(object):
     @staticmethod
     def read_excel(abs_filename, sheet_name):
         data = pd.read_excel(abs_filename, sheet_name=sheet_name,
-                             index_col=0, na_filter=False)
+                             index_col=0, na_filter=False, )
         for col in data.columns:
             if col == "timestamp":
                 continue
