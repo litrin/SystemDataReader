@@ -184,7 +184,7 @@ class TMAMPlotSKX(BaseTMAMPlot):
 
 
 class TMAMPlotICX(BaseTMAMPlot):
-    EDP_VERSION = "edp3.94icx"
+    EDP_VERSION = "edp4.1icx"
     prefix = "metric_TMA"
     map = {
         "summary": {"metric_TMA_Frontend_Bound(%)": "Frontend Bound",
@@ -193,23 +193,23 @@ class TMAMPlotICX(BaseTMAMPlot):
                     "metric_TMA_Retiring(%)": "Retiring",
                     },
         "backend": {
-            "metric_TMA..Memory_Bound(%)": "Memory Bound",
-            "metric_TMA..Core_Bound(%)": "Core Bound"
+            "metric_TMA_..Memory_Bound(%)": "Memory Bound",
+            "metric_TMA_..Core_Bound(%)": "Core Bound"
         },
         "memory": {
-            "metric_TMA....L1_Bound(%)": "L1 Bound",
-            "metric_TMA....L2_Bound(%)": "L2 Bound",
-            "metric_TMA....L3_Bound(%)": "L3 Bound",
-            "metric_TMA....DRAM_Bound(%)": "DRAM Bound",
+            "metric_TMA_....L1_Bound(%)": "L1 Bound",
+            "metric_TMA_....L2_Bound(%)": "L2 Bound",
+            "metric_TMA_....L3_Bound(%)": "L3 Bound",
+            "metric_TMA_....DRAM_Bound(%)": "DRAM Bound",
         },
 
         "ports": {
-            "metric_TMA....Ports_Utilization(%)": "All",
-            "metric_TMA....Divider(%)": "Devider",
-            'metric_TMA......0_Ports_Utilization(%)': "Port 0",
-            "metric_TMA......1_Port_Utilized(%)": "Port 1",
-            "metric_TMA......2_Ports_Utilized(%)": "Port 2",
-            "metric_TMA......3m_Ports_Utilized(%)": "Port 3m"
+            "metric_TMA_....Ports_Utilization(%)": "All",
+            "metric_TMA_....Divider(%)": "Devider",
+            'metric_TMA_......Ports_Utilized_0(%)': "Port 0",
+            "metric_TMA_......Ports_Utilized_1(%)": "Port 1",
+            "metric_TMA_......Ports_Utilized_2(%)": "Port 2",
+            "metric_TMA_......Ports_Utilized_3m(%)": "Port 3m"
         }
 
     }
