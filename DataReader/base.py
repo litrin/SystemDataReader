@@ -62,7 +62,7 @@ class RawDataFileReader(object):
         with open(self.filename, "r") as fd:
             while True:
                 row = fd.readline()
-                if len(row) is 0:
+                if len(row) == 0:
                     break
 
                 if regex.match(row):
