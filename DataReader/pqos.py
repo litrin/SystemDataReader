@@ -5,6 +5,35 @@ import pandas as pd
 from .base import RawDataFileReader, DataCacheObject
 
 
+class PQoSCSVReader:
+
+    def __init__(self, filename):
+        self.filename = filename
+        self.data = pd.read_csv(filename)
+
+    @property
+    def grouped_data(self):
+        return self.data.groupby("Core")
+
+    @property
+    def core_groups(self):
+        return list(self.data["Core"].drop_duplicates())
+
+    def core_set(self, core):
+        if core in self.core_groups:
+            return self.data[self.data["Core"] == core]
+        return None
+
+    def to_excel(self, filename):
+        writer = pd.ExcelWriter(filename)
+        for group in self.core_groups:
+            label = group
+            df = self.core_set(group)
+            df.to_excel(writer, sheet_name=label)
+
+        writer.close()
+
+
 class PQoSReader(RawDataFileReader, DataCacheObject):
     headers = ['CORE', 'IPC', 'MISSES', 'LLC', 'MBL', 'MBR']
     sample_range = None
