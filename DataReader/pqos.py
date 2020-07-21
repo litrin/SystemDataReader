@@ -1,19 +1,19 @@
 import re
+import xml.etree.cElementTree as ET
 
-import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
 
 from DataReader.base import RawDataFileReader, DataCacheObject
 
 
-class PQoSCSVReader:
-    """
-    Through cmd "pqos -u csv -o <filename.csv>", pqos may save metrics to csv.
-    """
+class BasePQoSReader:
+
+    filename = None
 
     def __init__(self, filename, ts=False, total_bandwidth=False):
         self.filename = filename
-        self.data = pd.read_csv(filename)
+        self.read_file()
 
         if ts:
             # when enabled ts, covert as time serail data
@@ -25,6 +25,9 @@ class PQoSCSVReader:
             self.data["Total MemoryBW"] = self.data["MBL[MB/s]"] + self.data[
                 "MBL[MB/s]"]
 
+    def read_file(self):
+        pass
+
     def data_clean(self, column, fun):
         """
 
@@ -33,24 +36,6 @@ class PQoSCSVReader:
         :return: None
         """
         self.data[column] = fun(self.data[column])
-
-    @property
-    def grouped_data(self):
-        """
-        all metrics data grouped by coresets
-
-        :return: list [(coreset_name, [data])]
-        """
-        return self.data.groupby("Core")
-
-    @property
-    def core_groups(self):
-        """
-        All coreset names
-
-        :return: list [(str) coreset]
-        """
-        return list(self.data["Core"].drop_duplicates())
 
     def core_set(self, core):
         """
@@ -115,6 +100,96 @@ class PQoSCSVReader:
         fig.subplots_adjust(wspace=0.3, hspace=0.4)
         plt.savefig(output_file)
         plt.close('all')
+
+    @property
+    def grouped_data(self):
+        """
+        all metrics data grouped by coresets
+
+        :return: list [(coreset_name, [data])]
+        """
+        return self.data.groupby("Core")
+
+    @property
+    def core_groups(self):
+        """
+        All coreset names
+
+        :return: list [(str) coreset]
+        """
+        return list(self.data["Core"].drop_duplicates())
+
+    @property
+    def aggregate(self):
+        return self.data.groupby("Core").mean()
+
+
+class PQoSCSVReader(BasePQoSReader):
+    """
+    Through cmd "pqos -u csv -o <filename.csv>", pqos may save metrics to csv.
+    """
+
+    def read_file(self):
+        self.data = pd.read_csv(self.filename)
+
+
+class PQoSXMLReader(BasePQoSReader):
+    """
+    Through cmd "pqos -u xml -o <filename.csv>", pqos may save metrics to xml.
+    """
+
+    mapping = {"time": "Time", "core": "Core", "ipc": "IPC",
+               "llc_misses": "LLC Misses", 'l3_occupancy_kB': "LLC[KB]",
+               'mbm_local_MB': "MBL[MB/s]", "mbm_remote_MB": "MBR[MB/s]"}
+
+    def read_file(self):
+        file_content = ET.ElementTree(file=self.filename)
+        data = []
+        for metric in file_content.getroot():
+            # metric = {e.tag: float(e.text) for e in metric}
+            # self.data = pd.DataFrame(data).rename(columns=self.mapping)
+            entry = {}
+            for e in metric:
+                label = self.mapping[e.tag]
+                if e.tag == "time":
+                    entry[label] = e.text
+                else:
+                    entry[label] = float(e.text)
+
+            data.append(entry)
+
+        self.data = pd.DataFrame(data)
+
+
+class PQoSOutputReader(BasePQoSReader):
+    """
+    Through cmd "pqos", pqos may print metrics to stdout.
+    """
+
+    mapping = ['Core', 'IPC', 'LLC Misses', 'LLC[KB]', 'MBL[MB/s]',
+               'MBR[MB/s]']
+
+    def read_file(self):
+        with open(self.filename) as fd:
+            contents = fd.readlines()
+        data = []
+        for row_num, row_contents in enumerate(contents):
+            if re.match(r"^TIME", row_contents):
+                time_stamp = row_contents[5:]
+            elif re.match(r"^\s*\d+", row_contents) is None:
+                continue
+            else:
+                entry = dict(
+                    zip(self.mapping, row_contents.split()))
+
+                entry["Time"] = time_stamp
+                entry["LLC Misses"] = int(entry["LLC Misses"][:-1]) * 1000
+                for key in ['IPC', 'LLC[KB]', 'MBL[MB/s]', 'MBR[MB/s]']:
+                    entry[key] = float(entry[key])
+
+                data.append(entry)
+
+        self.data = pd.DataFrame(data)
 
 
 class PQoSReader(RawDataFileReader, DataCacheObject):
