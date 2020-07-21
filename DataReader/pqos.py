@@ -1,15 +1,26 @@
 import re
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
-from .base import RawDataFileReader, DataCacheObject
+from DataReader.base import RawDataFileReader, DataCacheObject
 
 
 class PQoSCSVReader:
 
-    def __init__(self, filename):
+    def __init__(self, filename, ts=False, total_bandwidth=False):
         self.filename = filename
         self.data = pd.read_csv(filename)
+
+        if ts:
+            self.data["Time"] = pd.DatetimeIndex(self.data["Time"])
+
+        if total_bandwidth:
+            self.data["Total MemoryBW"] = self.data["MBL[MB/s]"] + self.data[
+                "MBL[MB/s]"]
+
+    def data_clean(self, column, fun):
+        self.data[column] = fun(self.data[column])
 
     @property
     def grouped_data(self):
@@ -26,12 +37,38 @@ class PQoSCSVReader:
 
     def to_excel(self, filename):
         writer = pd.ExcelWriter(filename)
-        for group in self.core_groups:
-            label = group
-            df = self.core_set(group)
-            df.to_excel(writer, sheet_name=label)
 
+        for group in self.core_groups:
+            label = "Core %s" % group
+            df = self.core_set(group)
+            del (df["Core"])
+            df.to_excel(writer, sheet_name=label, index=False)
+
+        self.data.to_excel(writer, sheet_name="raw", index=False)
         writer.close()
+
+    def plot(self, output_file, group=None):
+        if group is None:
+            group = self.core_groups
+        charts = list(reader.data.columns)
+        fig = plt.figure(figsize=(16, 9), dpi=120)
+        position = 1
+        for chart in charts[2:]:
+            ax = fig.add_subplot(3, 2, position)
+            for cores in group:
+                values = self.core_set(cores)
+                ax.plot(values[chart], label=cores)
+            ax.set_title(chart)
+            legend = ax.legend(loc='best')
+            frame = legend.get_frame()
+            frame.set_alpha(1)
+            # frame.set_facecolor('none')
+
+            position += 1
+
+        fig.subplots_adjust(wspace=0.3, hspace=0.4)
+        plt.savefig(output_file)
+        plt.close('all')
 
 
 class PQoSReader(RawDataFileReader, DataCacheObject):
