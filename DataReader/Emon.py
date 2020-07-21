@@ -10,7 +10,7 @@ __all__ = ["EMONSummaryData", "EMONDetailData", "EMONMetricFormulaReader",
            "TopDownHelper"]
 
 # here is the version number from EDP
-__ver__ = "3.9"
+__ver__ = "4.2"
 
 
 class EMONReaderError(DataReaderError):
