@@ -9,8 +9,8 @@ Now it support raw data files from:
 - SPECjbb2006 benchmark result file.
 - SPECjbb2015 preset mode benchmark result file and output files.
 - Web search (from cloud suite project) result xml file or output file.
-- Clucene results
 - ptumon output files.
+- Linux perf tool outputs.
 - OS tools pqos, vmstat, sar, perf's outputs.
 - More system info raw data from lscpu or other command line tools.  
 
