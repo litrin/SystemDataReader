@@ -8,7 +8,6 @@ from DataReader.base import RawDataFileReader, DataCacheObject
 
 
 class BasePQoSReader:
-
     filename = None
 
     def __init__(self, filename, ts=False, total_bandwidth=False):
@@ -68,7 +67,7 @@ class BasePQoSReader:
             self.data.to_excel(writer, sheet_name="raw", index=False)
         writer.close()
 
-    def plot(self, output_file, coreset=None):
+    def plot(self, output_file=None, coreset=None):
         """
         Draw diagrams for pqos data
 
@@ -79,11 +78,11 @@ class BasePQoSReader:
         if coreset is None:
             coreset = self.core_groups
 
-        charts = list(self.data.columns)
+        charts = ['IPC', 'LLC Misses', 'LLC[KB]', 'MBL[MB/s]', 'MBR[MB/s]']
         fig = plt.figure(figsize=(16, 9), dpi=120)  # 16:9 as screen resolution
 
         position = 1
-        for chart in charts[2:]:
+        for chart in charts:
             ax = fig.add_subplot(3, 2, position)  # 3 rows, 2 columns
             for cores in coreset:
                 values = self.core_set(cores)
@@ -98,7 +97,11 @@ class BasePQoSReader:
             position += 1
 
         fig.subplots_adjust(wspace=0.3, hspace=0.4)
-        plt.savefig(output_file)
+        if output_file is not None:
+            plt.savefig(output_file)
+        else:
+            plt.show()
+
         plt.close('all')
 
     @property
@@ -255,3 +258,7 @@ class PQoSReader(RawDataFileReader, DataCacheObject):
         }
 
         return pd.DataFrame(result)
+
+
+o = PQoSOutputReader(r"C:\Users\liqunjia\Desktop\clucene_i3d\xxx.raw")
+o.plot()
