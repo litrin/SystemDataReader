@@ -50,7 +50,7 @@ class PQoSCSVReader:
     def plot(self, output_file, group=None):
         if group is None:
             group = self.core_groups
-        charts = list(reader.data.columns)
+        charts = list(self.data.columns)
         fig = plt.figure(figsize=(16, 9), dpi=120)
         position = 1
         for chart in charts[2:]:
