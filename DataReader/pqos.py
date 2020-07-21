@@ -7,35 +7,70 @@ from DataReader.base import RawDataFileReader, DataCacheObject
 
 
 class PQoSCSVReader:
+    """
+    Through cmd "pqos -u csv -o <filename.csv>", pqos may save metrics to csv.
+    """
 
     def __init__(self, filename, ts=False, total_bandwidth=False):
         self.filename = filename
         self.data = pd.read_csv(filename)
 
         if ts:
+            # when enabled ts, covert as time serail data
             self.data["Time"] = pd.DatetimeIndex(self.data["Time"])
 
         if total_bandwidth:
+            # if enabled, will calculate total memory bw.
+            # Strongly suggest to enable it when system NUMA mode disabled.
             self.data["Total MemoryBW"] = self.data["MBL[MB/s]"] + self.data[
                 "MBL[MB/s]"]
 
     def data_clean(self, column, fun):
+        """
+
+        :param column: str column name
+        :param fun: runable a function to data clean
+        :return: None
+        """
         self.data[column] = fun(self.data[column])
 
     @property
     def grouped_data(self):
+        """
+        all metrics data grouped by coresets
+
+        :return: list [(coreset_name, [data])]
+        """
         return self.data.groupby("Core")
 
     @property
     def core_groups(self):
+        """
+        All coreset names
+
+        :return: list [(str) coreset]
+        """
         return list(self.data["Core"].drop_duplicates())
 
     def core_set(self, core):
+        """
+        get metrics by coreset
+
+        :param core: str
+        :return: dataframe
+        """
         if core in self.core_groups:
             return self.data[self.data["Core"] == core]
         return None
 
-    def to_excel(self, filename):
+    def to_excel(self, filename, keep_raw=True):
+        """
+        Save data as excel file, coreset per seprated sheet
+
+        :param filename: filename
+        :param keep_raw: bool
+        :return: None
+        """
         writer = pd.ExcelWriter(filename)
 
         for group in self.core_groups:
@@ -44,20 +79,31 @@ class PQoSCSVReader:
             del (df["Core"])
             df.to_excel(writer, sheet_name=label, index=False)
 
-        self.data.to_excel(writer, sheet_name="raw", index=False)
+        if keep_raw:
+            self.data.to_excel(writer, sheet_name="raw", index=False)
         writer.close()
 
-    def plot(self, output_file, group=None):
-        if group is None:
-            group = self.core_groups
+    def plot(self, output_file, coreset=None):
+        """
+        Draw diagrams for pqos data
+
+        :param output_file: filename
+        :param coreset: list coreset need to plot, all sets as default
+        :return: None
+        """
+        if coreset is None:
+            coreset = self.core_groups
+
         charts = list(self.data.columns)
-        fig = plt.figure(figsize=(16, 9), dpi=120)
+        fig = plt.figure(figsize=(16, 9), dpi=120)  # 16:9 as screen resolution
+
         position = 1
         for chart in charts[2:]:
-            ax = fig.add_subplot(3, 2, position)
-            for cores in group:
+            ax = fig.add_subplot(3, 2, position)  # 3 rows, 2 columns
+            for cores in coreset:
                 values = self.core_set(cores)
                 ax.plot(values[chart], label=cores)
+
             ax.set_title(chart)
             legend = ax.legend(loc='best')
             frame = legend.get_frame()
