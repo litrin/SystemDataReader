@@ -1,8 +1,10 @@
+import pandas as pd
+
 from DataReader.base import LinuxColumnStyleOutputReader
 from DataReader.helper import CPUCoreList
 
-__all__ = ["VmstatReader", "SarReader",
-           "TurbostatReader"]
+__all__ = ["VmstatReader", "SarCPUstateReader", "SarNetworkstateReader",
+           "IOstatReader", "TurbostatReader"]
 
 
 class VmstatReader(LinuxColumnStyleOutputReader):
@@ -23,10 +25,10 @@ class IOstatReader(LinuxColumnStyleOutputReader):
 
     def aggregate(self, summary="mean"):
         data = getattr(self.data.groupby("Device:"), summary)
-        return data().T
+        return data()
 
 
-class SarReader(LinuxColumnStyleOutputReader):
+class SarCPUstateReader(LinuxColumnStyleOutputReader):
     """
     Please collect sar data by this command:  sar -P ALL <interval> <count>
     """
@@ -52,6 +54,31 @@ class SarReader(LinuxColumnStyleOutputReader):
         df = self.data
         ret = df[df["CPU#"].isin(core_list)]
         return ret
+
+
+class SarNetworkstateReader(LinuxColumnStyleOutputReader):
+    """
+    Please collect sar data by this command:  sar -n DEV <interval> <count>
+    """
+    header = ["Time", "AMPM", 'IFACE', 'rxpck/s', 'txpck/s', 'rxkB/s',
+              'txkB/s', 'rxcmp/s', 'txcmp/s', 'rxmcst/s']
+
+    data_row_regex = r"^(\d{2}:){2}\d{2}.*(A|P)M\s+[a-z]"
+
+    def get_content(self):
+        df = super().get_content()
+        df["Time"] = df["Time"] + " " + df["AMPM"]
+        del (df["AMPM"])
+
+        df["Time"] = pd.DatetimeIndex(df["Time"]) # covert to TS data
+        return df
+
+    def get_by_interface(self, interface):
+        return self.row_filter("IFACE", interface)
+
+    def aggregate(self, summary="mean"):
+        data = getattr(self.data.groupby("IFACE"), summary)
+        return data()
 
 
 class TurbostatReader(LinuxColumnStyleOutputReader):
