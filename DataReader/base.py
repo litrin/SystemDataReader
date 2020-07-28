@@ -179,3 +179,30 @@ class LinuxColumnStyleOutputReader(RawDataFileReader, DataCacheObject):
         :return: list
         """
         return row.split()
+
+    def distinct(self, column):
+        """
+        Get distinct values from column gaven
+
+        :param column: str column name
+        :return: list [str]
+        """
+        return list(self.data[column].drop_duplicates())
+
+    def row_filter(self, column_name, target, keep_column=False):
+        """
+        filter out entries which col = target
+
+        :param column_name: str column name
+        :param target: str values
+        :param keep_column: bool
+        :return: dataframe
+        """
+        if column_name not in self.header:
+            return None
+
+        df = self.data[self.data[column_name] == target]
+        if not keep_column:
+            del (df[column_name])
+
+        return df

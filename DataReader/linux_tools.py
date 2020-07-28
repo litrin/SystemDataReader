@@ -1,5 +1,5 @@
-from .base import LinuxColumnStyleOutputReader
-from .helper import CPUCoreList
+from DataReader.base import LinuxColumnStyleOutputReader
+from DataReader.helper import CPUCoreList
 
 __all__ = ["VmstatReader", "SarReader",
            "TurbostatReader"]
@@ -10,6 +10,20 @@ class VmstatReader(LinuxColumnStyleOutputReader):
     # need more detail column name
     header = ["r", "b", "swpd", "free", "buff", "cache", "si", "so", "bi",
               "bo", "in", "cs", "us", "sy", "id", "wa", "st"]
+
+
+class IOstatReader(LinuxColumnStyleOutputReader):
+    data_row_regex = r"^[a-z]"
+    header = ['Device:', 'rrqm/s', 'wrqm/s', 'r/s', 'w/s', 'rkB/s', 'wkB/s',
+              'avgrq-sz', 'avgqu-sz', 'await', 'r_await', 'w_await', 'svctm',
+              '%util']
+
+    def get_device(self, dev):
+        return self.row_filter("Device:", dev)
+
+    def aggregate(self, summary="mean"):
+        data = getattr(self.data.groupby("Device:"), summary)
+        return data().T
 
 
 class SarReader(LinuxColumnStyleOutputReader):
@@ -74,3 +88,10 @@ class TurbostatReader(LinuxColumnStyleOutputReader):
     @property
     def aggregate(self):
         return self.data[self.data["CPU"] == -1]
+
+
+if __name__ == "__main__":
+    c = IOstatReader(
+        r"\\shwdewajod1018\EDP4\litrin\Huawei\20200728\result-2020-07-27-193540\diskstat.txt")
+    print(c.aggregate("mean").to_excel(r"\\shwdewajod1018\EDP4\litrin\Huawei\20200728\result-2020-07-27-193540\avgio.xlsx"))
+    print(c.aggregate("max").to_excel(r"\\shwdewajod1018\EDP4\litrin\Huawei\20200728\result-2020-07-27-193540\maxio.xlsx"))
