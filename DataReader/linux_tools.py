@@ -1,3 +1,5 @@
+from abc import ABCMeta
+
 import pandas as pd
 
 from DataReader.base import LinuxColumnStyleOutputReader
@@ -28,35 +30,55 @@ class IOstatReader(LinuxColumnStyleOutputReader):
         return data()
 
 
-class SarCPUstateReader(LinuxColumnStyleOutputReader):
+class BaseSarReader(LinuxColumnStyleOutputReader):
+    __metaclass__ = ABCMeta
+
+    header = ["Time", "AMPM"]
+    data_row_regex = r"^(\d{2}:)\d{2}.*(A|P)M.*"
+
+    # data_category = ""
+
+    @property
+    def data_category(self):
+        return self.header[2]
+
+    def get_content(self):
+        df = super().get_content()
+        df["Time"] = df["Time"] + " " + df["AMPM"]
+        del (df["AMPM"])
+
+        df["Time"] = pd.DatetimeIndex(df["Time"])  # covert to TS data
+        return df
+
+    def aggregate(self, summary="mean"):
+        method = getattr(self.data.groupby(self.data_category), summary)
+        return method()
+
+    def __getitem__(self, item):
+        return self.data[self.data[self.data_category] == item]
+
+    def to_excel(self, filename):
+        writer = pd.ExcelWriter(filename)
+
+        for group in self.distinct(self.data_category):
+            label = "%s %s" % (self.data_category, group)
+            df = self[group]
+            del (df[self.data_category])
+            df.to_excel(writer, sheet_name=label, index=False)
+
+        writer.close()
+
+
+class SarCPUstateReader(BaseSarReader):
     """
     Please collect sar data by this command:  sar -P ALL <interval> <count>
     """
-    header = ["CPU#", "user", "nice", "sys", "io", "steal", "idle"]
+    header = ["Time", "AMPM", "CPU#", "user", "nice", "sys", "io", "steal",
+              "idle"]
     data_row_regex = r"^(\d{2}:)\d{2}.*(A|P)M.*(\d+|ALL)"
 
-    def data_formatter(self, row):
-        row = row.split()
-        data = [row[2]]  # column 2 is core ID
 
-        for element in row[3:]:
-            data.append(float(element[:-1]))
-
-        return data
-
-    def __getitem__(self, item):
-        if item.lower() == "all":
-            df = self.data
-            ret = df[df['CPU#'] == 'all']
-            return ret
-
-        core_list = map(str, CPUCoreList(item))
-        df = self.data
-        ret = df[df["CPU#"].isin(core_list)]
-        return ret
-
-
-class SarNetworkstateReader(LinuxColumnStyleOutputReader):
+class SarNetworkstateReader(BaseSarReader):
     """
     Please collect sar data by this command:  sar -n DEV <interval> <count>
     """
@@ -64,21 +86,6 @@ class SarNetworkstateReader(LinuxColumnStyleOutputReader):
               'txkB/s', 'rxcmp/s', 'txcmp/s', 'rxmcst/s']
 
     data_row_regex = r"^(\d{2}:){2}\d{2}.*(A|P)M\s+[a-z]"
-
-    def get_content(self):
-        df = super().get_content()
-        df["Time"] = df["Time"] + " " + df["AMPM"]
-        del (df["AMPM"])
-
-        df["Time"] = pd.DatetimeIndex(df["Time"]) # covert to TS data
-        return df
-
-    def get_by_interface(self, interface):
-        return self.row_filter("IFACE", interface)
-
-    def aggregate(self, summary="mean"):
-        data = getattr(self.data.groupby("IFACE"), summary)
-        return data()
 
 
 class TurbostatReader(LinuxColumnStyleOutputReader):
