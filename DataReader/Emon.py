@@ -66,7 +66,7 @@ class EMONReader(object):
 
             if not os.path.exists(abs_filename):
                 raise EMONReaderError(
-                    "View file is not exist: %s" % abs_filename)
+                    "CSV %s file is not exist" % abs_filename)
 
             df = self.read_csv(abs_filename, usecols)
 
