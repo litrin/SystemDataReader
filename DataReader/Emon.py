@@ -21,7 +21,7 @@ class EMONDataError(DataReaderError):
     pass
 
 
-class EMONReader(object):
+class EMONReader:
     """
     Base Emon/edp csv data reader
     """
@@ -40,7 +40,7 @@ class EMONReader(object):
     excel_file_name = None
     _excel_sheet_name_format = "%s %s"
 
-    metric_list = []
+    metric_list = None
 
     def __init__(self, path):
         """
@@ -78,9 +78,9 @@ class EMONReader(object):
 
     def select_metric(self, metric):
         if type(metric) == list:
-            self.metric_list.extend(metric)
+            self.metric_list = metric
         else:
-            self.metric_list.append(metric)
+            self.metric_list = [metric]
 
     def filter(self, data_frame):
         return data_frame
@@ -182,7 +182,10 @@ class EMONDetailData(EMONReader):
     _excel_sheet_name_format = "details %s view"
 
     fill_empty_entries = "ffill"
-    metric_list = ["timestamp"]
+
+    def select_metric(self, metric):
+        super().select_metric(metric)
+        self.metric_list.append("timestamp")
 
     def filter(self, data_frame):
         if self.fill_empty_entries:
