@@ -81,8 +81,8 @@ class BasePQoSReader:
 
         if charts is None:
             charts = self.data_indexes
-        elif type(charts) != type(list):
-            charts = list(charts)
+        # elif type(charts) != type(list):
+        #     charts = list(charts)
 
         fig = plt.figure(figsize=(16, 9), dpi=120)  # 16:9 as screen resolution
         position = 0
