@@ -88,9 +88,9 @@ class CSVCombineHelper(DataCacheObject):
 
         result = pd.DataFrame(result)
 
-        if " " is not None:
+        if sort is not None:
             columns = result.columns.tolist()
-            columns.sort()
+            columns = sorted(columns, key=sort)
 
             return result[columns]
 
@@ -144,10 +144,10 @@ class CPUCoreList(object):
     def convert(self, cpu_set):
         cpus = set()
         for element in cpu_set.split(self.sep):
-            if len(element) is 0:
+            if len(element) == 0:
                 continue
 
-            if element.find("-") is not -1:
+            if element.find("-") != -1:
                 element = element.split("-")
                 core_num_start = int(element[0])
                 core_num_end = int(element[1])
@@ -183,7 +183,7 @@ class CPUCoreList(object):
         cpus = ""
         group = [self.cpu_list[0]]
         for core in self.cpu_list[1:]:
-            if core - group[-1] is 1:
+            if core - group[-1] == 1:
                 group.append(core)
                 continue
             cpus += format_serials(group)

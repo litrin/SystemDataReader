@@ -65,7 +65,7 @@ class TimeSerialPlot(BaseVisualization):
 
     def get_chart(self, ax, ts_data):
         tmp = self.data[ts_data]
-        tmp.plot(ax=ax, fontsize=6)
+        tmp.plot_average(ax=ax, fontsize=6)
 
         ax.set_xlabel("ts")
         ax.set_title(ts_data)
@@ -91,10 +91,10 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
         ax = self.get_ax()
         ax.set_title("Top-down breakdown (top)")
 
-        data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                      startangle=90, fontsize=6,
-                      # explode=(0, 0, 0, 0.1)
-                      )
+        data.plot_average.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                              startangle=90, fontsize=6,
+                              # explode=(0, 0, 0, 0.1)
+                              )
 
         ax.set_ylabel("")
 
@@ -105,8 +105,8 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
         ax = self.get_ax()
         ax.set_title("Backend breakdown")
 
-        data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                      startangle=90, fontsize=6, )
+        data.plot_average.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                              startangle=90, fontsize=6, )
 
         ax.set_ylabel("")
 
@@ -116,10 +116,10 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
 
         ax.set_title("Cache Hierarchy")
 
-        data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                      startangle=90, fontsize=6,
-                      # explode=(0, 0, 0, 0.1)
-                      )
+        data.plot_average.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                              startangle=90, fontsize=6,
+                              # explode=(0, 0, 0, 0.1)
+                              )
         ax.set_ylabel("")
 
     def ports(self):
@@ -127,7 +127,7 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
 
         ax = self.get_ax()
         ax.set_title("Port utilizations(%)")
-        data.plot.bar(ax=ax, fontsize=6, )
+        data.plot_average.bar(ax=ax, fontsize=6, )
 
         ax.grid(True)
         ax.set_ylim(0, 100)

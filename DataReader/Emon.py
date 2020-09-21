@@ -21,7 +21,7 @@ class EMONDataError(DataReaderError):
     pass
 
 
-class EMONReader(object):
+class EMONReader:
     """
     Base Emon/edp csv data reader
     """
@@ -55,32 +55,41 @@ class EMONReader(object):
             self.excel_file_name = path
 
     def get_file_content(self, view, check_processing_state=False):
+        if len(self.metric_list) == 0:
+            usecols = None
+        else:
+            usecols = self.metric_list
+
         if self.csv_files_path is not None:
             filename = self._csv_file_filename_format % view
             abs_filename = os.path.join(self.csv_files_path, filename)
 
             if not os.path.exists(abs_filename):
                 raise EMONReaderError(
-                    "View file is not exist: %s" % abs_filename)
+                    "CSV %s file is not exist" % abs_filename)
 
-            df = self.read_csv(abs_filename)
+            df = self.read_csv(abs_filename, usecols)
 
         if self.excel_file_name is not None:
             sheet_name = self._excel_sheet_name_format % view
-            df = self.read_excel(self.excel_file_name, sheet_name)
+            df = self.read_excel(self.excel_file_name, sheet_name, usecols)
 
         return self.filter(df)
 
     def select_metric(self, metric):
-        self.metric_list.append(metric)
+        if type(metric) == list:
+            self.metric_list = metric
+        else:
+            self.metric_list = [metric]
 
     def filter(self, data_frame):
         return data_frame
 
     @staticmethod
-    def read_csv(abs_filename):
-        data = pd.read_csv(abs_filename, index_col=0, verbose=True,
-                           na_filter=False, engine="python", sep=",")
+    def read_csv(abs_filename, usecols=None):
+        data = pd.read_csv(abs_filename, index_col=0, na_filter=False,
+                           engine="c", sep=",", usecols=usecols)
+
         for col in data.columns:
             if col == "timestamp":
                 continue
@@ -89,9 +98,9 @@ class EMONReader(object):
         return data
 
     @staticmethod
-    def read_excel(abs_filename, sheet_name):
+    def read_excel(abs_filename, sheet_name, usecols=None):
         data = pd.read_excel(abs_filename, sheet_name=sheet_name,
-                             index_col=0, na_filter=False, )
+                             index_col=0, na_filter=False, usecols=usecols)
         for col in data.columns:
             if col == "timestamp":
                 continue
@@ -167,27 +176,18 @@ class EMONSummaryData(EMONReader):
     _csv_file_filename_format = "__edp_%s_view_summary.csv"
     _excel_sheet_name_format = "%s view"
 
-    def filter(self, data_frame):
-        if self.metric_list is not None:
-            data_frame = data_frame.loc[self.metric_list]
-        return data_frame
-
 
 class EMONDetailData(EMONReader):
     _csv_file_filename_format = "__edp_%s_view_details.csv"
     _excel_sheet_name_format = "details %s view"
 
-    convert_ts = False
     fill_empty_entries = "ffill"
 
+    def select_metric(self, metric):
+        super().select_metric(metric)
+        self.metric_list.append("timestamp")
+
     def filter(self, data_frame):
-        if self.convert_ts:
-            data_frame["timestamp"] = pd.to_datetime(
-                pd.Series(data_frame["timestamp"]))
-
-        if self.metric_list is not None:
-            data_frame = data_frame[self.metric_list]
-
         if self.fill_empty_entries:
             data_frame = data_frame.fillna(method=self.fill_empty_entries)
 
