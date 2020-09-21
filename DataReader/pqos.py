@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 
 class BasePQoSReader:
     filename = None
+    data_indexes = ['IPC', 'LLC Misses', 'LLC[KB]', 'MBL[MB/s]', 'MBR[MB/s]']
 
     def __init__(self, filename, ts=False, total_bandwidth=False):
         self.filename = filename
@@ -65,34 +66,48 @@ class BasePQoSReader:
             self.data.to_excel(writer, sheet_name="raw", index=False)
         writer.close()
 
-    def plot(self, output_file=None, coreset=None):
+    def plot(self, output_file=None, coreset=None, summary=False, charts=None):
         """
         Draw diagrams for pqos data
 
         :param output_file: filename
         :param coreset: list coreset need to plot, all sets as default
+        :param summary: bool plot bars or curves
+        :param charts:  datasets for plotting by index
         :return: None
         """
         if coreset is None:
             coreset = self.core_groups
 
-        charts = ['IPC', 'LLC Misses', 'LLC[KB]', 'MBL[MB/s]', 'MBR[MB/s]']
+        if charts is None:
+            charts = self.data_indexes
+        elif type(charts) != type(list):
+            charts = list(charts)
+
         fig = plt.figure(figsize=(16, 9), dpi=120)  # 16:9 as screen resolution
+        position = 0
+        chart_rows = len(charts) // 2 + 1
 
-        position = 1
         for chart in charts:
-            ax = fig.add_subplot(3, 2, position)  # 3 rows, 2 columns
-            for cores in coreset:
-                values = self.core_set(cores)
-                ax.plot(values[chart], label=cores)
-
-            ax.set_title(chart)
-            legend = ax.legend(loc='best')
-            frame = legend.get_frame()
-            frame.set_alpha(1)
-            # frame.set_facecolor('none')
-
             position += 1
+            ax = fig.add_subplot(chart_rows, 2, position)  # 3 rows, 2 columns
+            ax.set_title(chart)
+
+            if summary:
+                # plot bar diagram for aggregated data
+                values = self.aggregate[chart]
+                ax.bar(values.index, values.values)
+
+            else:
+                # else, plot as timeserail curves
+                for cores in coreset:
+                    values = self.core_set(cores)
+                    ax.plot(values[chart], label=cores)
+
+                legend = ax.legend(loc='best')
+                frame = legend.get_frame()
+                frame.set_alpha(1)
+                # frame.set_facecolor('none')
 
         fig.subplots_adjust(wspace=0.3, hspace=0.4)
         if output_file is not None:
