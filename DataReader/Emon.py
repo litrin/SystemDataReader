@@ -55,7 +55,7 @@ class EMONReader:
             self.excel_file_name = path
 
     def get_file_content(self, view, check_processing_state=False):
-        if len(self.metric_list) == 0:
+        if self.metric_list is None or len(self.metric_list) == 0:
             usecols = None
         else:
             usecols = self.metric_list

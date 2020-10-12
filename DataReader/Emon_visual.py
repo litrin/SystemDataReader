@@ -89,7 +89,7 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
         data = data.sort_values()
 
         ax = self.get_ax()
-        ax.set_title("Top-down breakdown (top)")
+        ax.set_title("Top breakdown")
 
         data.plot_average.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
                               startangle=90, fontsize=6,
