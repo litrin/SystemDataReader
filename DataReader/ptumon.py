@@ -28,9 +28,10 @@ class PtumonSKX(BasePtuReader):
     CLI: ./ptumon -csv > filename.csv
     """
     __version__ = 1.4
-    column_name = ["Time", "Dev", "Cor", "Thr", "CFreq", "UFreq", "T", "Util",
-                   "IPC", "DTS", "Temp", "Volt", "Power", "TotPwr", "TDP",
-                   "TStat", "TLog", "#TL", "TMargin", "SID"]
+    column_name = ["Time", "Dev", "Cor", "Thr", "MC", "Ch", "Sl", "CFreq",
+                   "UFreq", "T", "%Util", "IPC", "PS", "%C0", "%C1", "%C6",
+                   "%PC2", "%PC6", "DTS", "Temp", "Volt", "Power", "TDP",
+                   "TStat", "TLog", "#TL", "TMargin", "Index"]
 
     def get_data(self, keyword):
         reg = r"^\d{6}\.\d{3}_\d+\s*\,%s" % keyword.upper()
@@ -39,7 +40,8 @@ class PtumonSKX(BasePtuReader):
         for i in data_entries:
             row = i.split(",")
             row = dict(zip(self.column_name, row))
-            row["Time"], row["SID"] = tuple(row["Time"].split("_"))
+
+            row["Time"], row["Index"] = tuple(row["Time"].split("_"))
 
             csv_body.append(row)
 
@@ -69,3 +71,7 @@ class PtumonICX(BasePtuReader):
 
         data = pd.DataFrame(csv_body)
         return data.apply(pd.to_numeric, errors='ignore')
+
+
+Ptumon1 = PtumonSKX
+Ptumon2 = PtumonICX
