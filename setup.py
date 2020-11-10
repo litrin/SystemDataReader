@@ -15,5 +15,6 @@ setup(
         "pandas",
         "xlwt",
         "matplotlib",
+        "openpyxl",
     ],
 )
