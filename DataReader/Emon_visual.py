@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-from DataReader.Emon import EMONSummaryData, TopDownHelper
+from DataReader.Emon import EMONSummaryData, TopDownHelper, EMONDetailData
 
 
 class BaseVisualization:
@@ -231,3 +231,46 @@ class TMAMPlotICX(BaseTMAMPlot):
         tman_ploter.ports()
 
         tman_ploter.close()
+
+
+class MetricsDiagrams:
+    path = None
+
+    def __init__(self, path, view=EMONDetailData.SOCKET):
+        self.path = path
+        reader = EMONDetailData(path)
+        self.data = reader.get_file_content(view)
+
+    def select_data(self, metric):
+        heads = {}
+        for col in self.data.columns.values:
+            if col.startswith(metric):
+                heads[col] = col[7:]
+        df = self.data[heads.keys()]
+        return df.rename(columns=heads)
+
+    def plot(self, metric):
+        data = self[metric]
+        data.plot()
+        plt.show()
+
+    def __getitem__(self, item):
+        return self.select_data(item)
+
+    def save_ts_diagram(self, filename):
+        col = EMONSummaryData(self.path).system_view.index.values
+        columns = filter(lambda a: a.startswith("metric_"), col)
+
+        with PdfPages(filename) as pdf:
+            for metric in columns:
+                fig = plt.figure()
+                ax = fig.add_subplot(1, 1, 1)
+
+                data = self[metric]
+                data.plot(ax=ax)
+                ax.set_xlabel("ts")
+                ax.set_ylabel("value")
+                ax.set_title(metric)
+
+                pdf.savefig()
+                plt.close(fig)
