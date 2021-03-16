@@ -239,7 +239,11 @@ class MetricsDiagrams:
     def __init__(self, path, view=EMONDetailData.SOCKET):
         self.path = path
         reader = EMONDetailData(path)
-        self.data = reader.get_file_content(view)
+        data = reader.get_file_content(view)
+        for m in data.columns.values:
+            if not m.startswith("metric_"):
+                del (data[m])
+        self.data = data
 
     def select_data(self, metric):
         heads = {}
@@ -267,6 +271,28 @@ class MetricsDiagrams:
                 ax = fig.add_subplot(1, 1, 1)
 
                 data = self[metric]
+                data.plot(ax=ax)
+                ax.set_xlabel("ts")
+                ax.set_ylabel("value")
+                ax.set_title(metric)
+
+                pdf.savefig()
+                plt.close(fig)
+
+    def aggragate(self, filename, method="mean", **kwargs):
+        col = EMONSummaryData(self.path).system_view.index.values
+        columns = filter(lambda a: a.startswith("metric_"), col)
+
+        with PdfPages(filename) as pdf:
+            for metric in columns:
+                fig = plt.figure()
+                ax = fig.add_subplot(1, 1, 1)
+
+                data = self[metric]
+                for k, headers in kwargs.items():
+                    data = data[headers].agg(method, axis="columns")
+                    data = data.drop(columns=headers)
+
                 data.plot(ax=ax)
                 ax.set_xlabel("ts")
                 ax.set_ylabel("value")
