@@ -22,10 +22,3 @@ class MKLLinpackSummary(RawDataFileReader):
         result = self.data[self.data["Maximal"] == self.data["Maximal"].max()]
         return result
 
-
-
-
-if __name__ == "__main__":
-    c = MKLLinpackSummary(
-        r"\\shwdewajod1018\EDP4\meiqi\D1\linpack\serial\0x1-24-25,72-73\linpack.txt")
-    print(c.data)
