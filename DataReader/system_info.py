@@ -1,5 +1,6 @@
-from .base import RawDataFileReader
+import pandas
 
+from DataReader.base import RawDataFileReader
 
 
 class BaseCLIOptionReader(RawDataFileReader):
@@ -83,3 +84,92 @@ class CommandlscpuInfo(BaseCLIOptionReader):
         return feature.lower() in self.flags
 
 
+class ProcInterrupt(RawDataFileReader):
+    """
+    Summary system level interrups by /proc/interrups
+
+    """
+    def __init__(self, filename="/proc/interrupts"):
+        self.filename = filename
+        self._get_data()
+
+    def _get_data(self):
+        data = self.reader()
+        header = ["INT"]
+        for i in data[0].split():
+            header.append(i)
+        for i in ("dev", "mode", "function"):
+            header.append(i)
+
+        tmp = []
+        for row in data[1:]:
+            row = row.split()
+            row[0] = row[0][:-1]
+            for i, v in enumerate(row):
+                try:
+                    row[i] = int(v)
+                except ValueError:
+                    row[i] = v
+
+            tmp.append(dict(zip(header, row)))
+
+        self.data = pandas.DataFrame(tmp)
+        self.data.index = self.data.INT.values
+        self.data = self.data.drop(columns="INT")
+
+    @property
+    def devices(self):
+        """
+        All devices
+
+        :return:
+        """
+        return self.data.dev.unique()
+
+    @property
+    def interrupts(self):
+        """
+        CPU based interrupts summary
+
+        :return:
+        """
+
+        return self.data[self.data.columns[
+            self.data.columns.map(lambda a: a.startswith("CPU"))]].dropna()
+
+    def filter_device(self, dev):
+        """
+        Filter out by device name
+
+        :param dev:
+        :return:
+        """
+        if dev in self.devices:
+            return self.data.where(self.data.dev == dev).dropna()
+        return None
+
+    def filter_function(self, handle):
+        """
+        Filter out by function name prefix
+
+        :param handle:
+        :return:
+        """
+        arr = [str(i).startswith(handle) for i in self.data.function.values]
+        return self.data.iloc[arr]
+
+    def summary(self, data=None):
+        """
+        CPU grouped interruption summary
+
+        :param data: DF | filtered data
+        :return: list
+        """
+        if data is None:
+            data = self.interrupts
+
+        result = []
+        for c in data.columns:
+            result.append(data[c].sum())
+
+        return result
