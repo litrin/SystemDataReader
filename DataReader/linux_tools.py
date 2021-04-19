@@ -90,7 +90,7 @@ class SarNetworkstateReader(BaseSarReader):
 
 class TurbostatReader(LinuxColumnStyleOutputReader):
     __version__ = "19.08"
-    data_row_regex = r"^(\d{1,3}|\-).*\d$"
+    data_row_regex = r"^\s+?(\d{1,3}|\-).*\d$"
 
     def set_column_name(self, column_name_list=None):
         if column_name_list is not None:
@@ -106,6 +106,7 @@ class TurbostatReader(LinuxColumnStyleOutputReader):
     def data_formatter(self, row):
         row = row.split()
         # mark global state as "-1"
+
         if row[0] == "-":
             row[0], row[1], row[2] = -1, -1, -1
         return row
