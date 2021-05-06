@@ -22,3 +22,11 @@ class MKLLinpackSummary(RawDataFileReader):
         result = self.data[self.data["Maximal"] == self.data["Maximal"].max()]
         return result
 
+    def size(self, size_from, size_to=None):
+        if size_to is None:
+            return self.data[self.data["Size"] == size_from]
+
+        if size_from > size_to:
+            size_from, size_to = size_to, size_from
+        return self.data[self.data["Size"] >= size_from][
+            self.data["Size"] <= size_to]

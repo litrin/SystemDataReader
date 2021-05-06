@@ -136,14 +136,3 @@ class InstructionLatencyTable:
 
     def __mul__(self, other):
         return self.attache_summary_data(other)
-
-# if __name__ == "__main__":
-#     sde_result = SDEInstructionSummaryReader(
-#         r"C:\Users\liqunjia\OneDrive - Intel Corporation\Desktop\sde-mix-out.txt")
-#
-#     latency_data = InstructionLatencyTable(
-#         r"C:\Users\liqunjia\OneDrive - Intel Corporation\Desktop\throughput and latency.csv",
-#     )
-#     total_latency = latency_data * sde_result
-#     total_latency.to_csv(
-#         r"C:\Users\liqunjia\OneDrive - Intel Corporation\Desktop\ret.csv", )
