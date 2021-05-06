@@ -88,7 +88,8 @@ class EMONReader:
     @staticmethod
     def read_csv(abs_filename, usecols=None):
         data = pd.read_csv(abs_filename, index_col=0, na_filter=False,
-                           engine="c", sep=",", usecols=usecols)
+                           engine="c", sep=",", usecols=usecols,
+                           low_memory=False)
 
         for col in data.columns:
             if col == "timestamp":
