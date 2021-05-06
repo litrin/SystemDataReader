@@ -89,7 +89,7 @@ class SarNetworkstateReader(BaseSarReader):
 
 
 class TurbostatReader(LinuxColumnStyleOutputReader):
-    __version__ = "19.08"
+    __version__ = "18.0"
     data_row_regex = r"^(\d{1,3}|\-).*\d$"
 
     def set_column_name(self, column_name_list=None):
@@ -98,9 +98,6 @@ class TurbostatReader(LinuxColumnStyleOutputReader):
         else:
             with open(self.filename) as fd:
                 column_name_list = fd.readline()
-                while column_name_list.find("Avg_MHz") == -1:
-                    column_name_list = fd.readline()
-
             self.header = column_name_list.split()
 
     def data_formatter(self, row):
