@@ -7,6 +7,8 @@ from DataReader.base import RawDataFileReader
 
 
 class BasePtuReader(RawDataFileReader):
+    column_name_regexp = r"^.+Index.+Device"
+    
     def __init__(self, filename):
         self.filename = filename
 
@@ -22,6 +24,19 @@ class BasePtuReader(RawDataFileReader):
 
     def __getitem__(self, item):
         return self.get_data(item)
+
+    @property
+    def column_name(self):
+        """
+        Get column names from regexp set by var self.column_name_regexp
+
+        :return: list
+        """
+        for row in self.egrep(self.column_name_regexp):
+            return row.split()
+
+        raise ReferenceError(
+            "Column names are not found in %s" % self.filename)
 
 
 class PtumonSKX(BasePtuReader):
@@ -55,10 +70,6 @@ class PtumonICX(BasePtuReader):
     cli: ./ptu -mon -csv > filename.csv
     """
     __version__ = 2.0
-    column_name = ["Index", "Device", "Cor", "Thr", "CFreq", "UFreq", "Util",
-                   "IPC", "C0", "C1", "C6", "PC2", "PC6", "MC", "Ch", "Sl",
-                   "Temp", "DTS", "Power", "Volt", "TStat", "TLog", "#TL",
-                   "TMargin"]
 
     def get_data(self, keyword):
         reg = r"^\s*\d+\s*%s" % keyword.upper()
@@ -143,7 +154,8 @@ class PtuTurboFrequency(RawDataFileReader):
 
             ax.fill_between(data.Cores, data["CFreq(exp)"], data["CFreq(act)"],
                             facecolor='r', alpha=0.3)
-            ax.grid(True)
+
+            # ax.grid(True)
 
             ax.set_title("Socket %s (%s)" % (cpu, self.Instructions),
                          fontsize=10)
