@@ -246,3 +246,72 @@ class ExcelSheet:
     def close(self):
         self.writer.close()
         self.writer = None
+
+
+class MultiFilesReader:
+    """
+    Read multiple files with same format
+    """
+
+    filenames = {}  # all files {tag: filename}
+    content = {}  # data cached
+
+    def __init__(self, files=None):
+        """
+        Object constructor
+
+        :param files: string | [str] | {str: str} filename or name list
+        """
+        if files is not None:
+            if isinstance(files, str):
+                self.add_file(files)
+
+            if isinstance(files, list):
+                for f in files:
+                    self.add_file(f)
+
+            if isinstance(files, dict):
+                for k, v in files.items():
+                    self.add_file(v, k)
+        else:
+            raise TypeError("%s is not a valid file list!" % files)
+
+    def add_file(self, filename, tag=None):
+        """
+        add files into filenames list
+
+        :param filename: str abs filename
+        :param tag: str the tag
+
+        :return: None
+        """
+        if tag is None:
+            tag = filename
+        self.filenames[tag] = filename
+
+    def filter(self, row):
+        """
+        Row level contents filter
+
+        :param row: str row content
+        :return: object
+        """
+        return row[:-1]
+
+    def get_data(self):
+        """
+        Begin to read files
+
+        :return: dict
+        """
+        data = {}
+        for k, v in self.filenames.items():
+            with open(v) as fd:
+                data[k] = [self.filter(row) for row in fd.readlines()]
+
+        self.content = data
+        return data
+
+    @property
+    def data(self):
+        return self.content
