@@ -233,6 +233,62 @@ class TMAMPlotICX(BaseTMAMPlot):
         tman_ploter.close()
 
 
+class TMAMPlotSPR(BaseTMAMPlot):
+    EDP_VERSION = "edp4.24spr"
+    prefix = "metric_TMA"
+    map = {
+        "summary": {"metric_TMA_Frontend_Bound(%)": "Frontend Bound",
+                    "metric_TMA_Backend_bound(%)": "Backend Bound",
+                    "metric_TMA_Bad_Speculation(%)": "Bad Speculation",
+                    "metric_TMA_Retiring(%)": "Retiring",
+                    },
+        "backend": {
+            "metric_TMA_..Memory_Bound(%)": "Memory Bound",
+            "metric_TMA_..Core_Bound(%)": "Core Bound"
+        },
+        "memory": {
+            "metric_TMA_....L1_Bound(%)": "L1 Bound",
+            "metric_TMA_....L2_Bound(%)": "L2 Bound",
+            "metric_TMA_....L3_Bound(%)": "L3 Bound",
+            "metric_TMA_....DRAM_Bound(%)": "DRAM Bound",
+        },
+
+        "ports": {
+            "metric_TMA_....Ports_Utilization(%)": "All",
+            "metric_TMA_....Divider(%)": "Devider",
+            'metric_TMA_......Ports_Utilized_0(%)': "Port 0",
+            "metric_TMA_......Ports_Utilized_1(%)": "Port 1",
+            "metric_TMA_......Ports_Utilized_2(%)": "Port 2",
+            "metric_TMA_......Ports_Utilized_3m(%)": "Port 3m",
+
+            "metric_TMA_........ALU_Op_Utilization(%)": "ALU",
+
+            "metric_TMA_..........Port_0(%)": "Port#0",
+            "metric_TMA_..........Port_1(%)": "Port#1",
+            "metric_TMA_..........Port_6(%)": "Port#6",
+
+        }
+
+    }
+
+    @staticmethod
+    def plot_all(path, image_name=None):
+        if image_name is None:
+            image_name = "%s.png" % path
+
+        emon = EMONSummaryData(path)
+        emon = emon.system_view
+
+        tman_ploter = TMAMPlotICX(emon.aggregated, "metric_TMA")
+        tman_ploter.set_fig(2, 2, image_name)
+
+        tman_ploter.summary()
+        tman_ploter.cache_hierarchy()
+        tman_ploter.backend_bound()
+        tman_ploter.ports()
+
+        tman_ploter.close()
+
 class MetricsDiagrams:
     path = None
 
@@ -280,8 +336,7 @@ class MetricsDiagrams:
                 plt.close(fig)
 
     def aggragate(self, filename, method="mean", **kwargs):
-        col = EMONSummaryData(self.path).system_view.index.values
-        columns = filter(lambda a: a.startswith("metric_"), col)
+        columns = self._get_column_list()
 
         with PdfPages(filename) as pdf:
             for metric in columns:
