@@ -70,13 +70,26 @@ class TimeSerialPlot(BaseVisualization):
         ax.set_xlabel("ts")
         ax.set_title(ts_data)
 
-    def save_pdf(self, filename):
+    def get_hist(self, ax, ts_data):
+        tmp = self.data[ts_data]
+        tmp.plot.hist(ax=ax, fontsize=6)
+
+        ax.set_title("%s (hist)" % ts_data)
+
+    def save_pdf(self, filename, with_hist=False):
         with PdfPages(filename) as pdf:
             for ts_data in self.data.columns.values:
+
                 fig = plt.figure()
                 ax = fig.add_subplot(1, 1, 1)
                 self.get_chart(ax, ts_data)
                 pdf.savefig()
+
+                if with_hist:
+                    fig = plt.figure()
+                    ax = fig.add_subplot(1, 1, 1)
+                    self.get_hist(ax, ts_data)
+                    pdf.savefig()
 
                 plt.close()
 
@@ -279,7 +292,7 @@ class TMAMPlotSPR(BaseTMAMPlot):
         emon = EMONSummaryData(path)
         emon = emon.system_view
 
-        tman_ploter = TMAMPlotICX(emon.aggregated, "metric_TMA")
+        tman_ploter = TMAMPlotSPR(emon.aggregated, "metric_TMA")
         tman_ploter.set_fig(2, 2, image_name)
 
         tman_ploter.summary()
@@ -317,9 +330,13 @@ class MetricsDiagrams:
     def __getitem__(self, item):
         return self.select_data(item)
 
-    def save_ts_diagram(self, filename):
+    def _get_column_list(self):
         col = EMONSummaryData(self.path).system_view.index.values
         columns = filter(lambda a: a.startswith("metric_"), col)
+        return columns
+
+    def save_ts_diagram(self, filename):
+        columns = self._get_column_list()
 
         with PdfPages(filename) as pdf:
             for metric in columns:
