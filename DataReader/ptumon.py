@@ -38,6 +38,18 @@ class BasePtuReader(RawDataFileReader):
         raise ReferenceError(
             "Column names are not found in %s" % self.filename)
 
+    def plot_telemetry(self, devices, column_name, method=plt.show):
+        fig, ax = plt.subplots()
+        tmp = {}
+        for i in devices:
+            data = self.get_data(i)
+            tmp[i] = data[column_name]
+            df = pd.DataFrame(tmp)
+        df.plot(ax=ax)
+        # ax.legend()
+        ax.set_title(column_name)
+
+        method()
 
 class PtumonSKX(BasePtuReader):
     """
@@ -148,9 +160,9 @@ class PtuTurboFrequency(RawDataFileReader):
         for cpu in self.data["CPU"].unique():
             data = self.get_by_cpu(cpu)
             ax = axs[cpu]
-            ax.plot(data.Cores, data["CFreq(exp)"], color="red",
-                    linestyle="--", linewidth=0.75)
-            ax.plot(data.Cores, data["CFreq(act)"], linewidth=1)
+            ax.plot_telemetry(data.Cores, data["CFreq(exp)"], color="red",
+                              linestyle="--", linewidth=0.75)
+            ax.plot_telemetry(data.Cores, data["CFreq(act)"], linewidth=1)
 
             ax.fill_between(data.Cores, data["CFreq(exp)"], data["CFreq(act)"],
                             facecolor='r', alpha=0.3)

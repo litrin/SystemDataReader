@@ -21,6 +21,10 @@ class EMONDataError(DataReaderError):
     pass
 
 
+EMONSummaryData = pd.DataFrame
+EMONDetailData = pd.DataFrame
+
+
 class EMONReader:
     """
     Base Emon/edp csv data reader
