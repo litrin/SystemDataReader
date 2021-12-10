@@ -229,12 +229,19 @@ class ExcelSheet:
     writer = None
     sheets = []
 
+    _remove = False
+
     def __init__(self, filename):
-        self.writer = pd.ExcelWriter(filename)
+        self.filename = filename
+        self.writer = pd.ExcelWriter(self.filename, engine='xlsxwriter')
 
     def __del__(self):
+
         if self.writer is not None:
             self.close()
+
+        if self._remove: # only for conditions marco attached
+            os.remove(self.filename)
 
     def add_sheet(self, df, sheet_label=None):
         if sheet_label is None:
@@ -242,6 +249,16 @@ class ExcelSheet:
 
         self.sheets.append(sheet_label)
         df.to_excel(self.writer, sheet_name=sheet_label)
+
+    def attach_marco(self, marco_file="vbaProject.bin"):
+        if not os.path.exists(marco_file):
+            return
+
+        new_filename = "%s.xlsm" % self.filename[:self.filename.find(".")]
+        self.writer.book.filename = new_filename
+        self.writer.book.add_vba_project(marco_file)
+
+        self._remove = True
 
     def close(self):
         self.writer.close()

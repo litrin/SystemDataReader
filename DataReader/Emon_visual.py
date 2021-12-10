@@ -1,7 +1,18 @@
+from DataReader.Emon import EMONSummaryData, TopDownHelper, EMONDetailData
+from itertools import combinations
+
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.lines import Line2D
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 
-from DataReader.Emon import EMONSummaryData, TopDownHelper, EMONDetailData
+PIPELINE_DIAGRAM = True
+try:
+    from matplotlib.sankey import Sankey
+except ImportError:
+    PIPELINE_DIAGRAM = False
 
 
 class BaseVisualization:
@@ -98,54 +109,103 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
     map = {}
 
     def summary(self):
-        data = self.filter(self.map["summary"])
-        data = data.sort_values()
+        toplevel = self.filter(self.map["summary"])
+        toplevel = toplevel.sort_values()
+        values = toplevel * 100 / toplevel.sum()
+
+        backendbound = self.filter(self.map["backend"])
+
+        values["Backend (memory)"] = values['Backend Bound'] * backendbound[
+            "Memory Bound"] / backendbound.sum()
+        values["Backend (core)"] = values['Backend Bound'] * backendbound[
+            "Core Bound"] / backendbound.sum()
+
+        del (values['Backend Bound'])
 
         ax = self.get_ax()
-        ax.set_title("Top breakdown")
+        ax.set_title("Top breakdown", fontsize=8)
 
-        data.plot_average.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                              startangle=90, fontsize=6,
-                              # explode=(0, 0, 0, 0.1)
-                              )
+        if PIPELINE_DIAGRAM:  # pipeline diagram chat
 
-        ax.set_ylabel("")
+            ax.set_frame_on(False)
+            ax.set(xticks=[], yticks=[])
+            values = values * -1
+            sankey = Sankey(ax=ax, format='%.1f', unit='%', scale=0.0015,
+                            offset=0.1,
+                            flows=[100,
+                                   values['Frontend Bound'],
+                                   values['Backend (memory)'],
+                                   values["Backend (core)"],
+                                   values['Bad Speculation'],
+                                   values['Retiring']],
+                            labels=['', 'Frontend\nBound',
+                                    'Backend\n(Memory)', 'Backend\n(Core)',
+                                    'BadSpeculation', 'Retiring'],
+
+                            orientations=[0, -1, 1, 1, -1, 0],
+                            patchlabel="Pipeline\nstalled",
+                            facecolor="deepskyblue"
+                            )
+
+            chat = sankey.finish()
+            chat[0].text.set_fontsize(6)
+            for i in chat[0].texts:
+                i.set_fontsize(4)
+                # i.set_fontweight("light")
+
+            if values['Retiring'] > -30:
+                chat[0].texts[-1].set_color('r')
+
+        else:  # pi diagram chat
+            values.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                            startangle=90, fontsize=6,
+                            # explode=(0, 0, 0, 0.1)
+                            )
+
+            ax.set_ylabel("")
+
+        plt.tight_layout()
 
     def backend_bound(self):
         data = self.filter(self.map["backend"])
 
         data = data.sort_values()
         ax = self.get_ax()
-        ax.set_title("Backend breakdown")
+        ax.set_title("Backend breakdown", fontsize=8)
 
-        data.plot_average.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                              startangle=90, fontsize=6, )
+        data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                      startangle=90, fontsize=6, )
 
         ax.set_ylabel("")
+        plt.tight_layout()
 
     def cache_hierarchy(self):
         data = self.filter(self.map["memory"])
         ax = self.get_ax()
 
-        ax.set_title("Cache Hierarchy")
+        ax.set_title("Cache Hierarchy", fontsize=8)
 
-        data.plot_average.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
-                              startangle=90, fontsize=6,
-                              # explode=(0, 0, 0, 0.1)
-                              )
+        data.plot.pie(ax=ax, autopct='%1.1f%%',  # shadow=True,
+                      startangle=90, fontsize=6,
+                      # explode=(0, 0, 0, 0.1)
+                      )
         ax.set_ylabel("")
+
+        plt.tight_layout()
 
     def ports(self):
         data = self.filter(self.map["ports"])
 
         ax = self.get_ax()
-        ax.set_title("Port utilizations(%)")
-        data.plot_average.bar(ax=ax, fontsize=6, )
+        ax.set_title("Port utilizations(%)", fontsize=8)
+        data.plot.bar(ax=ax, fontsize=6, )
 
         ax.grid(True)
         ax.set_ylim(0, 100)
         ax.set_xlabel("")
         ax.set_ylabel("%")
+
+        plt.tight_layout()
 
 
 class TMAMPlotSKX(BaseTMAMPlot):
@@ -302,6 +362,7 @@ class TMAMPlotSPR(BaseTMAMPlot):
 
         tman_ploter.close()
 
+
 class MetricsDiagrams:
     path = None
 
@@ -372,3 +433,108 @@ class MetricsDiagrams:
 
                 pdf.savefig()
                 plt.close(fig)
+
+
+class PCAClusteringDiagram:
+    data = None
+    cluster = 3
+    kmeans = None
+    pca_data = None
+
+    _marks = list(zip(mcolors.TABLEAU_COLORS, Line2D.filled_markers))
+    n_components = 0xffff
+
+    def __init__(self, data, clusters: int = 3, n_comp: int = 0xffff):
+        self.data = data
+        self.cluster = clusters
+        self.n_components = n_comp
+
+        if len(self.dimension) < self.n_components:
+            self.n_components = len(self.dimension) - 1
+
+    def analyze(self):
+        pca = PCA(n_components=self.n_components, whiten=True)
+        pca.fit(self.data)
+        self.pca_data = pca.transform(self.data)
+        self.pc_comp = pca.components_
+
+        self.kmeans = KMeans(self.cluster)
+        self.kmeans.fit(self.pca_data)
+
+    @property
+    def dimension(self):
+        return self.data.columns
+
+    @property
+    def centroids(self):
+        return self.kmeans.cluster_centers_
+
+    @property
+    def cluster_labels(self):
+        return self.kmeans.labels_
+
+    def _plot_chat(self, dem1, dem2):
+        fig = plt.figure()
+        for i, l in enumerate(self.cluster_labels):
+            markers = self._marks[l]
+            name = "%s: %s" % (i, self.data.index[i])
+            cluster_samples = self.pca_data[i]
+
+            plt.plot(cluster_samples[dem1], cluster_samples[dem2],
+                     color=markers[0],
+                     marker=markers[1], ls='None', label=name)
+            plt.annotate(i,
+                         xy=(cluster_samples[dem1], cluster_samples[dem2]),
+                         xytext=(
+                             cluster_samples[dem1], cluster_samples[dem2]),
+                         fontsize=7)
+
+        plt.scatter(self.centroids[:, dem1], self.centroids[:, dem2],
+                    color='r', marker="+")
+
+        plt.title("PC%s + PC%s" % (dem1, dem2), fontsize=10)
+        plt.xlabel("PC%s" % dem1, fontsize=8)
+        plt.ylabel("PC%s" % dem2, fontsize=8)
+        plt.legend(bbox_to_anchor=(1, 1), fontsize=6)
+
+        fig.tight_layout()
+
+    def display(self, dem1=0, dem2=1):
+        self._plot_chat(dem1, dem2)
+        plt.show()
+
+    def plot_all(self, method=plt.show):
+        for i in combinations(range(self.n_components), 2):
+            self._plot_chat(i[0], i[1])
+            yield method()
+            plt.close()
+
+    def plot_centroids(self, method=plt.show):
+        col = len(self.dimension)
+        y_pos = range(col)
+
+        fig, ax = plt.subplots()
+        width = 1 / col  # 0.2
+        offset = 0
+        for i, v in enumerate(self.pc_comp):
+            offset += width
+            pos = [(a - 0.5) + offset for a in y_pos]
+
+            ax.bar(pos, v, width=width * 0.95, label="PC%s" % i)
+
+        ax.set_xticks(y_pos)
+        ax.set_xticklabels(self.dimension, fontsize=6)
+        ax.set_title('Weight Value in Eigenvector')
+        ax.legend()
+
+        fig.tight_layout()
+
+        yield method()
+
+    def save_pdf(self, filename):
+        with PdfPages(filename) as pdf:
+            for _ in self.plot_all(pdf.savefig):
+                pass
+
+            for _ in self.plot_centroids(pdf.savefig):
+                pass
