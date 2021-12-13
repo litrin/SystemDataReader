@@ -1,6 +1,8 @@
+import re
 from abc import abstractmethod
 
 import matplotlib.pyplot as plt
+import pandas
 import pandas as pd
 
 from DataReader.base import RawDataFileReader
@@ -95,6 +97,68 @@ class PtumonICX(BasePtuReader):
 
         data = pd.DataFrame(csv_body)
         return data.apply(pd.to_numeric, errors='ignore')
+
+
+class PtuRead:
+    """
+    This is the latest version for pturead, which will replace all others
+    """
+    filename = None
+    column_name = None
+
+    header_reg = re.compile(r"^\s?Index")
+    skip_footer = 3
+    separator = r"\s+"
+
+    def __init__(self, filename, header_reg=None, skip_footer=None):
+        self.filename = filename
+        if header_reg is not None:
+            self.header_reg = re.compile(header_reg)
+        if skip_footer is not None:
+            self.skip_footer = skip_footer
+
+        # skip the additional info at the header
+        fd = open(filename, "r")
+        row = ""
+        offset = 0
+        while not self.header_reg.match(row):
+            offset = fd.tell()
+            row = fd.readline()
+
+        fd.seek(offset)
+        df = pandas.read_table(fd,
+                               sep=self.separator,
+                               skipfooter=self.skip_footer,
+                               engine="python")
+
+        self.column_name = df.columns
+        for col in self.column_name:
+            if col == "Device":
+                continue
+            # df.loc[df[col] == "-", col] = None
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        self.data = df
+
+    @property
+    def devices(self):
+        return self.data["Device"].unique()
+
+    def get_data(self, keyword):
+        return self.data[self.data["Device"] == keyword]
+
+    def get_core(self, cpu, core):
+        df = self["CPU%s" % cpu]
+        return df[df["Cor"] == int(core)]
+
+    def get_thread(self, cpu, core, thread):
+        df = self.get_core(cpu, core)
+        return df[df["Thr"] == int(thread)]
+
+    def __getattr__(self, item):
+        return self.get_data(item)
+
+    def __getitem__(self, item):
+        return self.get_data(item)
 
 
 Ptumon1 = PtumonSKX
