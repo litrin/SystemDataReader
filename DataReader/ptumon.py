@@ -1,107 +1,15 @@
 import re
-from abc import abstractmethod
 
 import matplotlib.pyplot as plt
-import pandas
 import pandas as pd
+from matplotlib.backends.backend_pdf import PdfPages
 
 from DataReader.base import RawDataFileReader
 
 
-class BasePtuReader(RawDataFileReader):
-    column_name_regexp = r"^.+Index.+Device"
-    
-    def __init__(self, filename):
-        self.filename = filename
-
-    def set_header(self, header):
-        self.column_name = header
-
-    @abstractmethod
-    def get_data(self, keyword):
-        pass
-
-    def __getattr__(self, item):
-        return self.get_data(item)
-
-    def __getitem__(self, item):
-        return self.get_data(item)
-
-    @property
-    def column_name(self):
-        """
-        Get column names from regexp set by var self.column_name_regexp
-
-        :return: list
-        """
-        for row in self.egrep(self.column_name_regexp):
-            return row.split()
-
-        raise ReferenceError(
-            "Column names are not found in %s" % self.filename)
-
-    def plot_telemetry(self, devices, column_name, method=plt.show):
-        fig, ax = plt.subplots()
-        tmp = {}
-        for i in devices:
-            data = self.get_data(i)
-            tmp[i] = data[column_name]
-            df = pd.DataFrame(tmp)
-        df.plot(ax=ax)
-        # ax.legend()
-        ax.set_title(column_name)
-
-        method()
-
-class PtumonSKX(BasePtuReader):
-    """
-    CLI: ./ptumon -csv > filename.csv
-    """
-    __version__ = 1.4
-    column_name = ["Time", "Dev", "Cor", "Thr", "MC", "Ch", "Sl", "CFreq",
-                   "UFreq", "T", "%Util", "IPC", "PS", "%C0", "%C1", "%C6",
-                   "%PC2", "%PC6", "DTS", "Temp", "Volt", "Power", "TDP",
-                   "TStat", "TLog", "#TL", "TMargin", "Index"]
-
-    def get_data(self, keyword):
-        reg = r"^\d{6}\.\d{3}_\d+\s*\,%s" % keyword.upper()
-        data_entries = self.egrep(reg)
-        csv_body = []
-        for i in data_entries:
-            row = i.split(",")
-            row = dict(zip(self.column_name, row))
-
-            row["Time"], row["Index"] = tuple(row["Time"].split("_"))
-
-            csv_body.append(row)
-
-        data = pd.DataFrame(csv_body)
-        return data.apply(pd.to_numeric, errors='ignore')
-
-
-class PtumonICX(BasePtuReader):
-    """
-    cli: ./ptu -mon -csv > filename.csv
-    """
-    __version__ = 2.0
-
-    def get_data(self, keyword):
-        reg = r"^\s*\d+\s*%s" % keyword.upper()
-        data_entries = self.egrep(reg)
-
-        csv_body = []
-        for i in data_entries:
-            row = i.split()
-            row = dict(zip(self.column_name, row))
-            csv_body.append(row)
-
-        data = pd.DataFrame(csv_body)
-        return data.apply(pd.to_numeric, errors='ignore')
-
-
 class PtuRead:
     """
-    This is the latest version for pturead, which will replace all others
+    This is the latest version for ptu read, which will replace all others
     """
     filename = None
     column_name = None
@@ -126,10 +34,9 @@ class PtuRead:
             row = fd.readline()
 
         fd.seek(offset)
-        df = pandas.read_table(fd,
-                               sep=self.separator,
-                               skipfooter=self.skip_footer,
-                               engine="python")
+        df = pd.read_table(fd,
+                           sep=self.separator, skipfooter=self.skip_footer,
+                           engine="python")
 
         self.column_name = df.columns
         for col in self.column_name:
@@ -160,6 +67,42 @@ class PtuRead:
     def __getitem__(self, item):
         return self.get_data(item)
 
+    def plot_telemetry(self, devices, column_name, method=plt.show):
+        fig, ax = plt.subplots()
+
+        _tmp = {}
+        min_length = 2 ** 63
+        for i in devices:
+            data = self.get_data(i)
+            if min_length > data.length:
+                min_length = data.length
+            _tmp[i] = data[column_name].values
+        _tmp = {k: v[:min_length] for k, v in _tmp.items()}  # length alignment
+
+        df = pd.DataFrame(_tmp)
+        df.plot(ax=ax)
+        ax.set_title(column_name)
+
+        fig.tight_layout()
+        method()
+
+    def save_pdf(self, filename, devices=None, telemetries=None):
+        if devices is None:
+            devices = list(filter(lambda a: a.startswith("CPU"), self.devices))
+
+        if telemetries is None:
+            telemetries = ['CFreq', 'Util', 'IPC',
+                           'Temp', 'Power',
+                           'C0', 'C1']
+
+        with PdfPages(filename) as pdf:
+            for p in telemetries:
+                self.plot_telemetry(devices=devices, column_name=p,
+                                    method=pdf.savefig)
+
+
+PtumonSKX = PtuRead
+PtumonICX = PtuRead
 
 Ptumon1 = PtumonSKX
 Ptumon2 = PtumonICX
