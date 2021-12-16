@@ -82,7 +82,7 @@ class PtuReader:
     def plot_telemetry(self, devices, column_name, method=plt.show):
         fig, ax = plt.subplots()
 
-        df = self.get_telemetry(column_name, devices)
+        df = self.get_telemetry(devices, column_name)
         df.plot(ax=ax)
         ax.set_title(column_name)
 
@@ -197,7 +197,3 @@ class PtuTurboFrequency(RawDataFileReader):
     def __getitem__(self, item):
         return self.get_by_cpu(item)
 
-
-if __name__ == "__main__":
-    ptu = PtuReader(r"C:\Users\liqunjia\Downloads\spower.out")
-    ptu.save_pdf(r"C:\Users\liqunjia\Downloads\ptu.pdf")

@@ -2,13 +2,20 @@ import pandas as pd
 
 from DataReader.ptumon import PtuReader
 
+columns = ("Power", "CFreq", "Volt", 'Util', "C0", "C1", "C6")
+
+
+def plot(input, output, devices):
+    reader = PtuReader(input)
+    reader.save_pdf(output, devices=devices, telemetries=columns)
+
 
 def conversation(input, output, devices):
     reader = PtuReader(input)
-    devices = [i.upper() for i in devices]
+
     data = None
 
-    for col in ("Power", "CFreq", "Volt", 'Util', "C0", "C1", "C6"):
+    for col in columns:
         tmp = reader.get_telemetry(devices, col)
         tmp.columns = pd.MultiIndex.from_product([[col], devices])
 
@@ -16,8 +23,8 @@ def conversation(input, output, devices):
             data = tmp
         else:
             data = pd.concat([data, tmp], axis=1)
-    print(output)
     data.to_excel(output)
+
 
 
 def main():
@@ -36,8 +43,15 @@ def main():
                       dest="devices",
                       help="Component list, separated by ','")
 
+    parser.add_option("-d", "--diagram", default=None, dest="diagram",
+                      help="Draw diagrams with PDF format")
+
     (options, args) = parser.parse_args()
-    conversation(options.input, options.output, options.devices.split(","))
+    devices = [i.upper() for i in options.devices.split(",")]
+    if options.diagram is not None:
+        plot(options.input, options.diagram, devices)
+    else:
+        conversation(options.input, options.output, devices)
 
 
 if __name__ == "__main__":
