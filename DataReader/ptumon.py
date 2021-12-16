@@ -7,7 +7,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from DataReader.base import RawDataFileReader
 
 
-class PtuRead:
+class PtuReader:
     """
     This is the latest version for ptu read, which will replace all others
     """
@@ -67,24 +67,28 @@ class PtuRead:
     def __getitem__(self, item):
         return self.get_data(item)
 
-    def plot_telemetry(self, devices, column_name, method=plt.show):
-        fig, ax = plt.subplots()
-
+    def get_telemetry(self, devices, column_name):
         _tmp = {}
         min_length = 2 ** 63
         for i in devices:
             data = self.get_data(i)
-            if min_length > data.length:
-                min_length = data.length
+            if min_length > len(data):
+                min_length = len(data)
             _tmp[i] = data[column_name].values
         _tmp = {k: v[:min_length] for k, v in _tmp.items()}  # length alignment
-
         df = pd.DataFrame(_tmp)
+        return df
+
+    def plot_telemetry(self, devices, column_name, method=plt.show):
+        fig, ax = plt.subplots()
+
+        df = self.get_telemetry(column_name, devices)
         df.plot(ax=ax)
         ax.set_title(column_name)
 
         fig.tight_layout()
         method()
+
 
     def save_pdf(self, filename, devices=None, telemetries=None):
         if devices is None:
@@ -101,8 +105,8 @@ class PtuRead:
                                     method=pdf.savefig)
 
 
-PtumonSKX = PtuRead
-PtumonICX = PtuRead
+PtumonSKX = PtuReader
+PtumonICX = PtuReader
 
 Ptumon1 = PtumonSKX
 Ptumon2 = PtumonICX
@@ -192,3 +196,8 @@ class PtuTurboFrequency(RawDataFileReader):
 
     def __getitem__(self, item):
         return self.get_by_cpu(item)
+
+
+if __name__ == "__main__":
+    ptu = PtuReader(r"C:\Users\liqunjia\Downloads\spower.out")
+    ptu.save_pdf(r"C:\Users\liqunjia\Downloads\ptu.pdf")
