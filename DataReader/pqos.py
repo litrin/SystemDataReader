@@ -201,7 +201,7 @@ class PQoSOutputReader(BasePQoSReader):
                     zip(self.mapping, row_contents.split()))
 
                 entry["Time"] = time_stamp
-                entry["LLC Misses"] = self._llc_unit(entry["LLC Misses"][:-1])
+                entry["LLC Misses"] = self._llc_unit(entry["LLC Misses"])
 
                 for key in ['IPC', 'LLC[KB]', 'MBL[MB/s]', 'MBR[MB/s]']:
                     entry[key] = float(entry[key])
