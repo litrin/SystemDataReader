@@ -185,6 +185,8 @@ class PQoSOutputReader(BasePQoSReader):
     mapping = ['Core', 'IPC', 'LLC Misses', 'LLC[KB]', 'MBL[MB/s]',
                'MBR[MB/s]']
 
+    reg = re.compile(r"(\d+)(k|m)?", re.I)
+
     def read_file(self):
         with open(self.filename) as fd:
             contents = fd.readlines()
@@ -199,10 +201,29 @@ class PQoSOutputReader(BasePQoSReader):
                     zip(self.mapping, row_contents.split()))
 
                 entry["Time"] = time_stamp
-                entry["LLC Misses"] = int(entry["LLC Misses"][:-1]) * 1000
+                entry["LLC Misses"] = self._llc_unit(entry["LLC Misses"][:-1])
+
                 for key in ['IPC', 'LLC[KB]', 'MBL[MB/s]', 'MBR[MB/s]']:
                     entry[key] = float(entry[key])
 
                 data.append(entry)
 
         self.data = pd.DataFrame(data)
+
+    def _llc_unit(self, s):
+
+        reg_group = self.reg.search(s)
+        if not reg_group:
+            return -1
+
+        reg_group = reg_group.groups()
+        value = int(reg_group[0])
+        unit = reg_group[1]
+
+        if unit == "k":
+            return value * 1E3
+
+        if unit == "m":
+            return value * 1E6
+
+        return value
