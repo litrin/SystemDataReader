@@ -253,7 +253,7 @@ class ExcelSheet:
     def attach_marco(self, marco_file="vbaProject.bin"):
         if not os.path.exists(marco_file):
             return
-        ext_name_offset = self.filename.find(os.path.sep, -6)
+        ext_name_offset = self.filename.find(os.path.extsep, -6)
         new_filename = "%s.xlsm" % self.filename[:ext_name_offset]
 
         self.writer.book.filename = new_filename
