@@ -253,8 +253,9 @@ class ExcelSheet:
     def attach_marco(self, marco_file="vbaProject.bin"):
         if not os.path.exists(marco_file):
             return
+        ext_name_offset = self.filename.find(os.path.sep, -6)
+        new_filename = "%s.xlsm" % self.filename[:ext_name_offset]
 
-        new_filename = "%s.xlsm" % self.filename[:self.filename.find(".")]
         self.writer.book.filename = new_filename
         self.writer.book.add_vba_project(marco_file)
 
@@ -308,7 +309,7 @@ class MultiFilesReader:
 
     def filter(self, row):
         """
-        Row level contents filter
+        Row level contents process
 
         :param row: str row content
         :return: object
