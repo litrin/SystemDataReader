@@ -181,6 +181,29 @@ class EMONSummaryData(EMONReader):
     _csv_file_filename_format = "__edp_%s_view_summary.csv"
     _excel_sheet_name_format = "%s view"
 
+    def core_view_superset(self, socket=0, core=[0]):
+        if type(core) != type(list()):
+            core = [core]
+        column_name = ["socket %s core %s" % (socket, c) for c in core]
+
+        socket_data = self.socket_view["socket %s" % socket]
+        df = pd.DataFrame(index=socket_data.index)
+
+        na_metrics = None
+        for col in column_name:
+            core_data = self.core_view[col]
+            if na_metrics is None:
+                na_metrics = core_data.isna()
+
+            core_data[na_metrics] = socket_data[na_metrics]
+            df[col] = core_data
+
+        idx = socket_data.index[na_metrics]
+        df.index = df.index.map(
+            lambda x: "Uncore_%s" % x if x in idx else "Core_%s" % x)
+
+        return df
+
 
 class EMONDetailData(EMONReader):
     _csv_file_filename_format = "__edp_%s_view_details.csv"
@@ -213,7 +236,7 @@ class TopDownHelper(object):
         name_map = {k: k.lower() for k in dataframe.index}
         self.data = dataframe.rename(name_map, axis="index")
 
-        # filter out top-down related metrics
+        # process out top-down related metrics
         keys = filter(lambda a: a.startswith(prefix), self.data.index)
         self.data = self.filter(keys)
 
@@ -221,7 +244,7 @@ class TopDownHelper(object):
         """
         Filter metrics from list
 
-        :param index_list: dict | list, when use dict, filter out + rename
+        :param index_list: dict | list, when use dict, process out + rename
         :return: df
         """
         if isinstance(index_list, dict):
