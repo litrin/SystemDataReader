@@ -1,3 +1,5 @@
+import pandas
+
 from DataReader.Emon import EMONSummaryData, TopDownHelper, EMONDetailData
 from itertools import combinations
 
@@ -210,6 +212,7 @@ class BaseTMAMPlot(TopDownHelper, BaseVisualization):
 
 class TMAMPlotSKX(BaseTMAMPlot):
     EDP_VERSION = "edp3.9skx_clx"
+    prefix = "metric_TMAM"
     map = {
         "summary": {"metric_TMAM_Frontend_Bound(%)": "Frontend Bound",
                     "metric_TMAM_Backend_bound(%)": "Backend Bound",
@@ -538,3 +541,31 @@ class PCAClusteringDiagram:
 
             for _ in self.plot_centroids(pdf.savefig):
                 pass
+
+
+class MetricsCorrelation:
+
+    def __init__(self, emon_summary_data, index=None):
+        self.data = emon_summary_data
+
+        if index is None:
+            self.index = emon_summary_data.index
+        else:
+            self.index = index
+
+    def corrwith_performance(self, performance):
+        data = {i: self.data.loc[i].corr(performance) for i in self.index}
+        self.data["CORREL"] = pandas.Series(data)
+
+        return self.data["CORREL"]
+
+    def top(self, n=10):
+        if "CORREL" in self.data.columns:
+            sorted_value = self.data["CORREL"].sort_values(ascending=False)
+            return sorted_value.iloc[:n]
+
+        raise ReferenceError(
+            "method 'corrwith_performance' should run first first!")
+
+    def to_csv(self, filename):
+        self.data.to_csv(filename)
