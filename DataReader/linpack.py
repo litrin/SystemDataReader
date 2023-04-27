@@ -22,3 +22,39 @@ class MKLLinpackSummary(RawDataFileReader):
         result = self.data[self.data["Maximal"] == self.data["Maximal"].max()]
         return result
 
+
+class MPLinpackSummary:
+
+    def __init__(self, filename):
+        self.filename = filename
+        i = 0
+        with open(self.filename) as fd:
+            while True:
+                line = fd.readline()
+                if line is None:
+                    break
+
+                if line.startswith("="):
+                    i += 1
+                    if i < 3:
+                        continue
+                    if i > 3:
+                        break
+
+                    line = fd.readline()
+                    header = line.split()[1:]
+                    fd.readline()
+                    line = fd.readline()
+                    values = map(float, line.split()[1:])
+
+            fd.close()
+
+        self.data = dict(zip(header, values))
+
+        self.data["size"] = self.data["N"]
+        self.data["result"] = self.data["Gflops"]
+
+    def __getattr__(self, item):
+        if item in self.data.keys():
+            return self.data[item]
+        return self.data
