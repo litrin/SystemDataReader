@@ -111,6 +111,8 @@ PtumonICX = PtuReader
 Ptumon1 = PtumonSKX
 Ptumon2 = PtumonICX
 
+Ptatmon = PtuReader # ptu was renamed as PTAT after 2023Q1
+
 
 class PtuTurboFrequency(RawDataFileReader):
     """
